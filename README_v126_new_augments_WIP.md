@@ -21,9 +21,18 @@ Main game remains v1.2.5 while the new patch is developed.
 - Local JS parse checks and 40 numeric AI battle simulations passed.
 - Not yet released; browser gameplay and ambiguous rules must be resolved before merge.
 
+## Confirmed November 8 clarifications (implemented in local test build)
+- 탐사: At the beginning of each owner's combat turn, remove the unit in rear position 6 if occupied; accumulate its **base mana cost** across the league. At 33 mana, flag reward as pending; do not invent the reward.
+- 새로 고침의 날: During your summon phase, activate refresh mode and click the **specific hand card you choose**. One replacement consumes exactly 1 of the 3 uses. Current draft keeps unused uses across league battles.
+- 권투 교습: Only FRONT-row units gain HP, +1 current/max HP for each 2 occupied front-row cards. The bonus updates when cards enter or leave.
+
 ## Clarifications needed
-- 탐사: exactly when is the rightmost rear unit sacrificed, is its mana value accumulated across fights, and what constitutes the large reward?
+- 탐사: confirm the 33-mana large reward (currently pending), and whether 'round' means each individual combat turn (current assumption) or once per league match.
 - 약간 신비한 주사위: what die outcomes and prizes are used?
-- 새로 고침의 날: one card per swap or whole hand; and when can it be used?
-- 권투 교습: who receives the HP bonus (front units vs player), and is the bonus dynamic / permanent?
+- 새로 고침의 날: confirm the 3 uses apply to the whole 8-player league (current assumption) rather than resetting for every fight.
+- 권투 교습: implemented as dynamically recalculated bonus for front-row units.
 - Confirm if game-end empty-slot gold is calculated at the end of each league battle, and whether new weapon draws search the current deck.
+
+## Validation
+- 31 entries registered. User-selected hand replacement test, front-row-only boxing HP, exploration rear-slot loss & mana accumulation passed.
+- 40 AI numeric duel tests passed; browser loading was blocked by the current test environment. NOT released to main.
