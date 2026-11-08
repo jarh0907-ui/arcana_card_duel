@@ -1604,6 +1604,7 @@ function onHeroClick(side){unlockAudio();if(game.active!=='player'||uiLocked)ret
  else if(s?.kind==='attacker'&&side==='enemy'&&phaseOf()==='target')void playerAttack('hero',0);
 }
 function selectHand(index){unlockAudio();if(devKillMode||simulating||game.active!=='player'||game.winner||uiLocked)return;
+ if(window.ArcanaSilver?.refreshModeActive('player')){window.ArcanaSilver.refreshSelectedHand('player',index);return;}
  const c=resolvedHandCard('player',game.player.hand[index]);if(!c)return;
  if(c.dragon&&!canSummonDeathDragon('player')){
   log(hasDeathDragonOnField('player')?'이미 죽음의 용이 필드에 있어 추가 소환할 수 없습니다.':'카스토리스가 필드에 없어 죽음의 용을 소환할 수 없습니다.');render();return;
@@ -1878,14 +1879,14 @@ async function endTurn(){unlockAudio();if(devKillMode||simulating||game.active!=
  // Enemy A+B turn starts after the player's committed attack queue has completed.
  game.active='enemy';game.phase='summon';game.enemy.maxMana=Math.min(10,game.turn+2);game.enemy.mana=game.enemy.maxMana;advanceMachineTurn('enemy');finishHutTurn('enemy');healKyreneBlessed('enemy');
  for(const u of units(game.enemy))u.ready=u.machineState!=='working'&&u.machineState!=='resting'&&!u.tribalStage2;
- if(game.turn>1)drawTurnCards(game.enemy);if(checkWin())return;
+ if(game.turn>1)drawTurnCards(game.enemy);window.ArcanaSilver?.visualStartOfRound('enemy');if(checkWin())return;
  log(`──── ${game.turn}턴 상대 차례 ────`,'enemy-log');render();await pause(350);
  await aiAct(epoch);if(!sessionOk(epoch)||checkWin())return;expireBindingsAfterTurn('enemy');storeBonusMana(game.enemy);
  game.turn++;
  await progressConversionStatuses(epoch);if(!sessionOk(epoch)||checkWin())return;
  game.active='player';game.phase='summon';game.player.maxMana=Math.min(10,game.turn+2);game.player.mana=game.player.maxMana;advanceMachineTurn('player');finishHutTurn('player');
  for(const u of units(game.player))u.ready=u.machineState!=='working'&&u.machineState!=='resting'&&!u.tribalStage2;
- drawTurnCards(game.player);if(checkWin())return;
+ drawTurnCards(game.player);window.ArcanaSilver?.visualStartOfRound('player');if(checkWin())return;
  game.plans={player:[],enemy:[]};game.selected=null;
  log(`──── ${game.turn}턴 ① 소환 · 마나 ${game.player.mana} ────`,'good-log');uiLocked=false;render();phaseBanner('① 내 소환 단계!');
 }
@@ -1928,7 +1929,7 @@ function renderHand(){const side=game.player;$('hand').innerHTML=side.hand.lengt
  const dragonLimit=!!c.dragon&&hasDeathDragonOnField('player');
  const handArt=proxy?c.art:artFor(entry);const kind=c.type==='unit'?'유닛 카드':c.type==='item'?'장비 카드':'마법 카드';
  const manaEnough=(c.type==='spell'?spellBudget(side):side.mana)>=c.cost;
- const disabled=game.active!=='player'||uiLocked||simulating||((c.type==='unit'||c.type==='item')&&phaseOf()!=='summon')||(c.type==='spell'&&phaseOf()!=='spell')||(proxy&&!proxyUsable)||dragonLimit;
+ const disabled=!window.ArcanaSilver?.refreshModeActive('player')&&(game.active!=='player'||uiLocked||simulating||((c.type==='unit'||c.type==='item')&&phaseOf()!=='summon')||(c.type==='spell'&&phaseOf()!=='spell')||(proxy&&!proxyUsable)||dragonLimit);
  const titleName=proxy?c.name:displayUnitName(entry);
  const extra=dragonLimit?'<span class="proxy-lock dead">이미 죽음의 용이 필드에 있습니다 (동시에 1마리)</span>':proxy?`<span class="proxy-lock ${proxyUsable?'':'dead'}">${proxyUsable?`${proxyCharacterName(entry)} 전용 스펠`:`${proxyCharacterName(entry)}가 필드에 없어 사용 불가`}</span>`:'';
  const handStats=baseId==='kyrene'&&!proxy?`<div class="h-stats"><span>⚔ ${CARD_DB.kyrene.atk}</span><span>♥ ${CARD_DB.kyrene.hp}</span></div>`:c.type==='unit'?`${c.shield?'<span class="hand-shield-text">보호막 · 피해 -1</span>':''}<div class="h-stats"><span>⚔ ${c.atk}</span><span>♥ ${c.hp}</span></div>`:c.type==='item'?`<div class="h-stats"><span>⚔ +${c.bonusAtk}</span><span>${c.shield?'보호막 -1':`♥ +${c.bonusHp}`}</span></div>`:'<div class="h-stats">✦ 즉시 발동</div>';
@@ -1991,6 +1992,8 @@ $('soundToggle').addEventListener('click',()=>{soundEnabled=!soundEnabled;if(!so
 // Silver augment-only token card is not added to any normal pack or 1v1 starting deck.
 CARD_DB.silver_training_bot={name:'아카데미의 표적 훈련봇',cost:0,type:'unit',atk:0,hp:4,icon:'🤖',art:'silver_augments/training_bot_thumb.webp',description:'공격력 0 · 탑 증강 선택 시 스테이지에 따른 반사 피해',silverBot:true};
 Object.defineProperties(window,{__silverGame:{get:()=>game},__silverCards:{get:()=>CARD_DB}});
+window.__silverPackFor=(id)=>PACK_DEFS.find(pack=>pack.cards.includes(id))?.id||null;
+window.__silverLog=(msg)=>log(msg);
 window.__silverDamageUnit=(...args)=>damageUnit(...args);
 window.__silverHealUnit=(...args)=>healUnit(...args);
 window.__silverRender=()=>render();
