@@ -24,13 +24,23 @@ function simulateOne(cards, deckA, deckB, firstA, seed, cap=45, options={}){
   const priority=['mk1','shaman','chuchu_hut','castorice','kyrene','chuchu_geochief','stone_shield_brute','chuchu_fighter','wooden_shield_hilichurl','chuchu_archer','chuchu_brawler','young_chuchu_cyr','club','crossbow','woodshield','stoneshield','curse_staff','fire_arrow','axe_swing','recruit','binder','shade','piercer','leech','binding','fireball','heal','storm'];
   function newSide(counts,label){
     const deck=shuffle(Object.entries(counts).flatMap(([id,n])=>Array(n).fill(id)));
-    const s={label,deck,hand:[],front:Array(6).fill(null),back:Array(6).fill(null),hp:20,maxHp:20,mana:3,maxMana:3,bonusMana:0,fatigue:0,upgrades:options[label==='A'?'upgradesA':'upgradesB']||{},buffs:options[label==='A'?'buffsA':'buffsB']||{},augments:options[label==='A'?'augmentsA':'augmentsB']||[],silverSkip:options[label==='A'?'silverA':'silverB']?.skip||0,silverSpent:0,silverFirstSummon:false,silverTransformUsed:false,silverRootColumn:options[label==='A'?'rootColumnA':'rootColumnB']??(2+(seed%2)),championProgress:{castorice:{healed:0,dragonDamage:0,awakened:false}}};
+    const s={label,deck,hand:[],front:Array(6).fill(null),back:Array(6).fill(null),hp:20,maxHp:20,mana:3,maxMana:3,bonusMana:0,fatigue:0,upgrades:options[label==='A'?'upgradesA':'upgradesB']||{},buffs:options[label==='A'?'buffsA':'buffsB']||{},augments:options[label==='A'?'augmentsA':'augmentsB']||[],silverSkip:options[label==='A'?'silverA':'silverB']?.skip||0,silverSpent:0,silverFirstSummon:false,silverTransformUsed:false,silverRootColumn:options[label==='A'?'rootColumnA':'rootColumnB']??(2+(seed%2)),silverPersist:options[label==='A'?'silverA':'silverB']||{},championProgress:{castorice:{healed:0,dragonDamage:0,awakened:false}}};
     for(const id of priority){if(s.hand.length>=4)break;const at=s.deck.indexOf(id);if(at>=0)s.hand.push(s.deck.splice(at,1)[0]);}
     const total=Object.values(counts).reduce((a,b)=>a+b,0);
     while(s.hand.length<Math.min(4,total)&&s.deck.length)s.hand.push(s.deck.pop());
     if(s.augments.includes('extra_hand'))while(s.hand.length<6&&s.deck.length)s.hand.push(s.deck.pop());
     if(s.augments.includes('luck')&&s.hand.length){const e=s.hand[0];s.hand[0]=typeof e==='string'?{card:e,silverDiscount:3}:{...e,silverDiscount:3};}
     if(s.augments.includes('tower')){const [hp]=towerStats(options.leagueStage);s.hand.unshift({card:'silver_training_bot',silverBotOrigin:'tower',hp,maxHp:hp});}
+    for(const [aug,flag] of [['make_way','meleeOnly'],['spare_bow','rangedOnly']])if(s.augments.includes(aug)){
+      let drawn=0;while(drawn<2&&s.hand.length<9){const at=s.deck.findIndex(id=>card(typeof id==='string'?id:id?.card)?.type==='item'&&!!card(typeof id==='string'?id:id?.card)?.[flag]);
+      if(at<0)break;s.hand.push(s.deck.splice(at,1)[0]);drawn++;}
+    }
+    // The AI rerolls at most one selected hand card per duel; its three charges persist.
+    if(s.augments.includes('refresh_day')&&s.silverPersist.refreshRemaining>0&&s.deck.length&&s.hand.length){
+      const idx=s.hand.reduce((best,x,i)=>{const value=e=>card(typeof e==='string'?e:e.card)?.cost||0;return value(x)>value(s.hand[best])?i:best;},0);
+      const old=s.hand[idx];s.hand[idx]=s.deck.pop();s.deck.unshift(old);s.silverPersist.refreshRemaining--;
+      note(s,'새로 고침의 날: AI 손패 1장 교체');
+    }
     if(s.augments.includes('bomb'))s.hp=Math.max(0,s.hp-2);
     return s;
   }
@@ -39,7 +49,7 @@ function simulateOne(cards, deckA, deckB, firstA, seed, cap=45, options={}){
   const sides=firstA?[sA,sB]:[sB,sA];
   function other(s){return s===sA?sB:sA;}
   const hasAug=(s,id)=>s.augments?.includes(id);
-  let linking=false;
+  let linking=false,shockBusy=false;
   // Exactly one HP pool shared by the back-left and front-right units.
   function bondPair(s){const a=s.back[0],b=s.front[5];return a&&b?[a,b]:null;}
   function unlinkBond(s){const p=s?.silverBondPool;if(!p)return;const ratio=Math.max(0,p.hp)/(p.max||1);for(const m of p.members){m.u.silverBond=null;m.u.maxHp=m.ownMax;m.u.hp=Math.min(m.ownMax,Math.max(0,Math.ceil(m.ownMax*ratio)));}s.silverBondPool=null;}
@@ -62,6 +72,20 @@ function simulateOne(cards, deckA, deckB, firstA, seed, cap=45, options={}){
     if(hasAug(s,'glass')){const on=row==='back';if(on&&!u.silverGlassLost){u.silverGlassLost=true;const loss=Math.max(1,Math.ceil(u.maxHp*.3));u.maxHp=Math.max(1,u.maxHp-loss);u.hp=Math.max(1,u.hp-loss);}if(on&&!u.silverGlassActive){u.silverGlassBonus=u.atk*.15;u.atk+=u.silverGlassBonus;u.silverGlassActive=true;}else if(!on&&u.silverGlassActive){u.atk-=u.silverGlassBonus||0;u.silverGlassActive=false;u.silverGlassBonus=0;}}
    }
    if(hasAug(s,'twins')){const counts={};for(const u of units(s))counts[u.card]=(counts[u.card]||0)+1;for(const u of units(s)){const bonus=counts[u.card]>=2?1:0;if((u.silverTwin||0)!==bonus){u.atk+=bonus-(u.silverTwin||0);u.silverTwin=bonus;}}}
+   if(hasAug(s,'united_will')){
+    const counts={};for(const u of units(s)){const pack=options.packById?.[u.card];if(pack)(counts[pack]??=new Set()).add(u.card);}
+    for(const u of units(s)){const pack=options.packById?.[u.card],on=!!pack&&(counts[pack]?.size||0)>=7;
+     if(on&&!u.silverUnited){u.silverUnited=true;u.atk+=1;u.hp+=1;u.maxHp+=1;}
+     else if(!on&&u.silverUnited){u.silverUnited=false;u.atk-=1;u.maxHp=Math.max(1,u.maxHp-1);u.hp=Math.min(u.hp,u.maxHp);}
+    }
+   }
+   if(hasAug(s,'boxing_lessons')){
+    const bonus=Math.floor(s.front.filter(Boolean).length/2);
+    for(const {row,u} of all(s)){
+     const want=row==='front'?bonus:0,diff=want-(u.silverBoxing||0);
+     if(diff){u.silverBoxing=want;u.maxHp=Math.max(1,u.maxHp+diff);u.hp=Math.min(u.maxHp,Math.max(1,u.hp+Math.max(0,diff)));}
+    }
+   }
    bondRefresh(s);
    if(hasAug(s,'imperfect')&&round>=13&&!s.silverTranscend){s.silverTranscend=true;for(const u of units(s))if(!u.silverTranscend){u.atk*=1.5;u.silverTranscend=true;}note(s,'불완전한 초월: 공격력 ×1.5');}
   }
@@ -72,6 +96,15 @@ function simulateOne(cards, deckA, deckB, firstA, seed, cap=45, options={}){
    if(hasAug(other(s),'smash')&&(card(u.card)?.hut||card(u.card)?.building))u.hp=Math.max(1,u.hp-1);
    if(u.card==='silver_training_bot'){u.atk=0;if(u.silverBotOrigin==='tower'||hasAug(s,'tower')&&u.silverBotOrigin!=='transform'){const [hp,reflect]=towerStats(options.leagueStage);u.silverBotOrigin='tower';u.silverReflect=reflect;u.maxHp=u.hp=hp;}else{u.silverBotOrigin='transform';u.silverReflect=0;}}
    silverRefresh(s);
+  }
+  function silverExploreStart(s){
+   if(!hasAug(s,'exploration'))return;
+   const ix=s.back.length-1,u=s.back[ix];if(!u)return;
+   const cost=Math.max(0,Number(card(u.card)?.cost)||0);
+   s.silverPersist.exploredMana=(s.silverPersist.exploredMana||0)+cost;
+   if(s.silverPersist.exploredMana>=33)s.silverPersist.explorationReady=true;
+   note(s,`탐사: 후열 ${ix+1}번 희생 · 누적 마나 ${s.silverPersist.exploredMana}/33 · 보상 대기`);
+   destroy(s,'back',ix);silverRefresh(s);
   }
   function silverTryTransform(s){if(!hasAug(s,'transform')||s.silverTransformUsed)return;const fields=all(s);if(fields.length<2)return;
    const counted=new Set(),hp=fields.reduce((n,t)=>{const pool=t.u.silverBond;if(pool){if(counted.has(pool))return n;counted.add(pool);}return n+Math.max(0,t.u.hp);},0),first=fields[0];for(const t of fields)s[t.row][t.index]=null;
@@ -130,6 +163,14 @@ function simulateOne(cards, deckA, deckB, firstA, seed, cap=45, options={}){
     const u=s[row][index];if(!u)return 0;const actual=effectiveDamage(u,value),dealt=Math.min(Math.max(0,u.hp),actual);
     u.hp-=actual;metric(u.card).taken+=creditDefense(u,value,dealt);
     if(sourceId){metric(sourceId).damage+=dealt;if(u.hp<=0)metric(sourceId).kills++;}
+    if(!shockBusy&&sourceId&&other(s).silverActor&&hasAug(s,'electric_shock_1')){
+      if(s.silverShockRound!==round){s.silverShockRound=round;s.silverShockHits=0;}
+      s.silverShockHits++;
+      if(s.silverShockHits%4===0){shockBusy=true;try{
+       const enemy=other(s);for(const t of [...all(enemy)])if(enemy[t.row][t.index]===t.u)damage(enemy,t.row,t.index,1,null);
+       note(s,'전기 충격 1: 적 전체에게 1 피해');
+      }finally{shockBusy=false;}}
+    }
     if(u.silverBond){if(u.hp<=0)bondDead(s,u);else bondRefresh(s);}else if(u.hp<=0)destroy(s,row,index);
     if(sourceId&&typeof sourceId==='string'&&other(s).silverActor&&other(s).silverActor.hp>0){
       const src=other(s).silverActor;if(dealt>0&&src.silverAbsorb&&!card(src.card).absorb)heal(src,dealt);
@@ -281,13 +322,13 @@ function simulateOne(cards, deckA, deckB, firstA, seed, cap=45, options={}){
         s.maxMana=Math.min(10,round+2);s.mana=s.maxMana;advance(s);progressHuts(s);for(const u of units(s))u.ready=u.machineState!=='working'&&u.machineState!=='resting'&&!u.tribalStage2;if(round>1)drawTurnCards(s);
       }
       if(sA.hp<=0||sB.hp<=0)break;
-      silverRefresh(s);
+      silverExploreStart(s);silverRefresh(s);
       if(s.silverSkip>0){s.silverSkip--;note(s,'자리 비움: 행동하지 않는 턴');snapshot('자리 비움',s.label);expire(s);s.bonusMana=Math.min(3,s.bonusMana+s.mana);s.mana=0;continue;}
       doSummon(s);doEquip(s);silverTryTransform(s);snapshot('소환',s.label);
       if(s.aiMode==='adaptive')exchangeOne(s,'attack');silverRefresh(s);
-      const plans=plan(s);note(s,`${plans.length}건 예약`);snapshot('공격 지정',s.label);doSpells(s);snapshot('마법',s.label);
+      const plans=plan(s);note(s,`${plans.length}건 예약`);snapshot('공격 지정',s.label);s.silverActor=null;doSpells(s);snapshot('마법',s.label);
       if(sA.hp>0&&sB.hp>0){exchangeOne(other(s),'defense',plans);snapshot('수비',other(s).label);resolve(s,plans);snapshot('공격 해소',s.label);}
-      expire(s);s.bonusMana=Math.min(3,s.bonusMana+s.mana);s.mana=0;
+      s.silverActor=null;expire(s);s.bonusMana=Math.min(3,s.bonusMana+s.mana);s.mana=0;
       if(sA.hp<=0||sB.hp<=0)break;
     }
     if(sA.hp<=0||sB.hp<=0)break;
