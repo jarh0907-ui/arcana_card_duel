@@ -5,6 +5,8 @@ const $L=id=>document.getElementById(id);
 const safe=t=>String(t??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const json=o=>JSON.parse(JSON.stringify(o));
 const START_GOLD=0,START_HP=100;
+// Seven-distinct-cards-in-one-pack synergy is computed from live board units.
+const SILVER_PACK_BY_ID=Object.fromEntries(PACK_DEFS.flatMap(p=>p.cards.map(id=>[id,p.id])));
 // TEMPORARY shop economy, not a permanent card-balance rule.
 const SHOP={remove:6,plusAtk:12,plusHp:10,buffAtk:28,buffHp:22};
 const MAX_DECK=65;
@@ -141,7 +143,7 @@ function leagueStart(){stopReplay();if(activePlayerMatch)return;previousDeckConf
  }setPanel(true);leagueSave();renderLeague();}
 function leaveLeague(){if(activePlayerMatch)return;if(window.ArcanaSilver)window.ArcanaSilver.onBattleEnd();window.__silverPendingMapping=null;stopReplay();clearAuto();clearClock();if(!confirm('8인 리그를 종료하고 1대1 모드로 돌아갈까요? 진행 기록은 저장됩니다.'))return;league=null;if(previousDeckConfig){activeDeckConfig=json(previousDeckConfig);devDraft=json(previousDeckConfig);}setPanel(false);$L('leagueGameBar').hidden=true;originalNewGame();renderDevPanel();}
 function resumeLeague(){try{const value=localStorage.getItem(leagueKey);if(!value)return false;const loaded=JSON.parse(value);if(!Array.isArray(loaded.players)||loaded.players.length!==8)return false;previousDeckConfig=json(activeDeckConfig);league=loaded;league.autoAdvance=league.autoAdvance!==false;league.currentMatches=[];if(league.phase==='battle')league.phase='ready';setPanel(true);renderLeague();scheduleAuto(200);return true;}catch{return false;}}
-function newLeagueMenu(){if(activePlayerMatch)return;if(league){setPanel(true);renderLeague();return;}setPanel(true);$L('leagueBody').innerHTML=`<div class="lg-card lg-intro"><h2>🏆 8인 생존 리그</h2><p>플레이어 1명과 전략이 다른 AI 7명이 참가합니다. 매 스테이지 7라운드: ⚔ ⚔ ⚔ 🛒 ⚔ ⚔ 🛒</p><p>글로벌 HP 100 · 패배 피해 = 스테이지×3 + 승자의 남은 전투 HP÷2(버림). 골드로 덱을 강화하며 최후의 한 명이 우승합니다.</p><p class="lg-muted">실버 증강 20종을 테스트할 수 있습니다. 골드/프리즘은 아직 없습니다. 상점 가격과 강화 효과는 임시값입니다.</p><div class="lg-actions"><button class="lg-primary" data-lg="start">새 리그 시작</button><button data-lg="resume">저장된 리그 이어하기</button><button data-lg="close">1대1로 돌아가기</button></div></div>`;}
+function newLeagueMenu(){if(activePlayerMatch)return;if(league){setPanel(true);renderLeague();return;}setPanel(true);$L('leagueBody').innerHTML=`<div class="lg-card lg-intro"><h2>🏆 8인 생존 리그</h2><p>플레이어 1명과 전략이 다른 AI 7명이 참가합니다. 매 스테이지 7라운드: ⚔ ⚔ ⚔ 🛒 ⚔ ⚔ 🛒</p><p>글로벌 HP 100 · 패배 피해 = 스테이지×3 + 승자의 남은 전투 HP÷2(버림). 골드로 덱을 강화하며 최후의 한 명이 우승합니다.</p><p class="lg-muted">실버 증강 31종을 테스트할 수 있습니다. 골드/프리즘은 아직 없습니다. 상점 가격과 강화 효과는 임시값입니다.</p><div class="lg-actions"><button class="lg-primary" data-lg="start">새 리그 시작</button><button data-lg="resume">저장된 리그 이어하기</button><button data-lg="close">1대1로 돌아가기</button></div></div>`;}
 function roundType(){return league.round===4||league.round===7?'shop':'combat';}
 function stagedNext(){clearAuto();if(league.round===7){league.stage++;league.round=1;}else league.round++;league.phase='ready';league.currentMatches=[];league.lastIncome=[];league.shopOffers=[];for(const p of alive())window.ArcanaSilver.onStage(p,league.stage,league.round);leagueSave();renderLeague();scheduleAuto(170);}
 function giveIncome(p,combat,result){if(p.hp<=0)return null;const before=p.gold,interest=window.ArcanaSilver.beforeIncome(p,Math.min(5,Math.floor(before/10)));let bonus=0,win=0;
@@ -158,32 +160,50 @@ function pairRound(){const list=alive();const seen=new Set(),pairs=[],ordered=[.
  if(bye)pairs.push({id:`${league.stage}-${league.round}-bye`,a:bye.id,b:null,bye:true,result:{winner:'bye',hpA:20,hpB:0,round:0},trace:[]});return pairs;}
 const buildNumericCards=()=>Object.fromEntries(Object.entries(CARD_DB).map(([id,c])=>[id,{...c}]));
 function doNumeric(m){const pa=league.players[m.a],pb=league.players[m.b];const seed=(((league.stage*1000+league.round*100+m.a*19+m.b*71)*2654435761)>>>0);
- const res=window.ArcanaFastBalance.simulateOne(buildNumericCards(),pa.deck,pb.deck,(league.stage+league.round+m.a)%2===0,seed,AI_VIRTUAL_TURN_CAP,{aiA:'adaptive',aiB:'adaptive',record:true,upgradesA:pa.upgrades,upgradesB:pb.upgrades,buffsA:pa.buffs,buffsB:pb.buffs,augmentsA:pa.augments||[],augmentsB:pb.augments||[],silverA:pa.silver||{},silverB:pb.silver||{},leagueStage:league.stage,rootColumnA:window.ArcanaSilver.rootColumn(pa,league.stage,league.round),rootColumnB:window.ArcanaSilver.rootColumn(pb,league.stage,league.round)});
+ const res=window.ArcanaFastBalance.simulateOne(buildNumericCards(),pa.deck,pb.deck,(league.stage+league.round+m.a)%2===0,seed,AI_VIRTUAL_TURN_CAP,{aiA:'adaptive',aiB:'adaptive',record:true,upgradesA:pa.upgrades,upgradesB:pb.upgrades,buffsA:pa.buffs,buffsB:pb.buffs,augmentsA:pa.augments||[],augmentsB:pb.augments||[],silverA:pa.silver||{},silverB:pb.silver||{},leagueStage:league.stage,rootColumnA:window.ArcanaSilver.rootColumn(pa,league.stage,league.round),rootColumnB:window.ArcanaSilver.rootColumn(pb,league.stage,league.round),packById:SILVER_PACK_BY_ID});
  let winner=res.winner,reason='본체 HP 0';
  if(winner==='draw'){
   const last=res.trace?.at(-1);const a=last?.A||{hp:res.hpA},b=last?.B||{hp:res.hpB};
   const decision=compareTimedSides(a,b,seed);winner=decision.winner;
   reason=`AI 제한 시간 환산 종료 · ${decision.why}`;
  }
+ // End of each numeric match: each empty slot independently rolls a 33% chance for 1 gold.
+ const finalFrame=res.trace?.at(-1),fieldA=finalFrame?.A,fieldB=finalFrame?.B;
+ if(fieldA)grantEmptyFieldGold(pa,fieldA);
+ if(fieldB)grantEmptyFieldGold(pb,fieldB);
  m.result={winner,hpA:res.hpA,hpB:res.hpB,round:res.round,rawWinner:res.winner,timedOut:res.winner==='draw',reason,defeatTick:(res.trace?.findIndex(s=>s.A.hp<=0||s.B.hp<=0)??-1)>=0?res.trace.findIndex(s=>s.A.hp<=0||s.B.hp<=0):res.round*10};m.trace=res.trace||[];if(window.ArcanaSilver.has(pa,'sitout'))pa.silver.skip=0;if(window.ArcanaSilver.has(pb,'sitout'))pb.silver.skip=0;
+}
+function grantEmptyFieldGold(p,side){
+ if(!window.ArcanaSilver.has(p,'use_every_slot'))return 0;
+ const cells=[...(side.front||[]),...(side.back||[])];let gained=0;
+ for(const cell of cells)if(!cell&&Math.random()<.33)gained++;
+ p.gold+=gained;return gained;
 }
 function battleResolve(m){if(m.bye)return;const pa=league.players[m.a],pb=league.players[m.b],r=m.result;
  const winner=r.winner==='A'?pa:pb,loser=r.winner==='A'?pb:pa;
  const remaining=Math.max(0,r.winner==='A'?r.hpA:r.hpB),damage=league.stage*3+Math.floor(Math.min(20,remaining)/2);
+ if(window.ArcanaSilver.has(winner,'kingslayer')){
+  const paid=loser.hp>winner.hp?6:1;winner.gold+=paid;m.result.kingSlayerGold=paid;
+ }
  loser.hp-=damage;m.result.damage=damage;m.result.winnerId=winner.id;m.result.loserId=loser.id;
  if(loser.hp<=0&&!loser.out){loser.out={roundIndex:(league.stage-1)*7+league.round,stage:league.stage,round:league.round,tick:r.defeatTick??(r.round*10+(r.winner==='A'?1:2)),serial:league.order++};}
 }
 function startCombatRound(){clearAuto();league.phase='battle';league.currentMatches=pairRound();for(const m of league.currentMatches)if(!m.bye&&m.a!==0&&m.b!==0){doNumeric(m);battleResolve(m);}league.message='대진 확정 · 내 경기가 자동으로 시작됩니다. 전투 제한 시간 03:00.';
  if(!league.currentMatches.some(m=>!m.bye&&(m.a===0||m.b===0)))finishRound();else{renderLeague();playMyMatch();}}
 function configureDeckFor(a,b){const enabled=Object.fromEntries(PACK_DEFS.map(p=>[p.id,true]));const make=p=>({enabled:{...enabled},counts:Object.fromEntries(Object.keys(CARD_DB).map(id=>[id,p.deck[id]||0]))});activeDeckConfig={player:make(a),enemy:make(b)};}
-function playMyMatch(){const m=league.currentMatches.find(x=>!x.bye&&(x.a===0||x.b===0));if(!m||m.result)return;const enemy=league.players[m.a===0?m.b:m.a];activePlayerMatch={matchId:m.id};configureDeckFor(league.players[0],enemy);setPanel(false);hideOverlay();$L('leagueGameBar').hidden=false;$L('leagueGameBar').textContent=`🏆 ${stageRound()} · ${league.players[0].name} ♥${league.players[0].hp} vs ${enemy.name} ♥${enemy.hp} · 보유 ${league.players[0].gold}G`;window.__silverPendingMapping={player:league.players[0],enemy,stage:league.stage,round:league.round};originalNewGame();startClock();if(window.ArcanaSilver.has(league.players[0],'root')){$L('leagueGameBar').insertAdjacentHTML('beforeend',`<span style="margin-left:8px">🌱 뿌리 박기 · 전열 ${window.ArcanaSilver.rootColumn(league.players[0],league.stage,league.round)+1}번 칸</span>`);}if(window.ArcanaSilver.has(league.players[0],'transform')&&!league.players[0].silver?.transformUsed){$L('leagueGameBar').insertAdjacentHTML('beforeend','<button type="button" id="silverTransformBtn" class="silver-transform-action">🤖 훈련봇 변환 · 1회</button>');}renderSidebar();}
+function playMyMatch(){const m=league.currentMatches.find(x=>!x.bye&&(x.a===0||x.b===0));if(!m||m.result)return;const enemy=league.players[m.a===0?m.b:m.a];activePlayerMatch={matchId:m.id};configureDeckFor(league.players[0],enemy);setPanel(false);hideOverlay();$L('leagueGameBar').hidden=false;$L('leagueGameBar').textContent=`🏆 ${stageRound()} · ${league.players[0].name} ♥${league.players[0].hp} vs ${enemy.name} ♥${enemy.hp} · 보유 ${league.players[0].gold}G`;window.__silverPendingMapping={player:league.players[0],enemy,stage:league.stage,round:league.round};originalNewGame();startClock();if(window.ArcanaSilver.has(league.players[0],'root')){$L('leagueGameBar').insertAdjacentHTML('beforeend',`<span style="margin-left:8px">🌱 뿌리 박기 · 전열 ${window.ArcanaSilver.rootColumn(league.players[0],league.stage,league.round)+1}번 칸</span>`);}if(window.ArcanaSilver.has(league.players[0],'refresh_day')&&window.ArcanaSilver.refreshRemaining('player')>0){$L('leagueGameBar').insertAdjacentHTML('beforeend',`<button type="button" id="silverRefreshBtn" class="silver-transform-action">🔄 손패 새로 고침 (${window.ArcanaSilver.refreshRemaining('player')}/3)</button>`);}
+ if(window.ArcanaSilver.has(league.players[0],'transform')&&!league.players[0].silver?.transformUsed){$L('leagueGameBar').insertAdjacentHTML('beforeend','<button type="button" id="silverTransformBtn" class="silver-transform-action">🤖 훈련봇 변환 · 1회</button>');}renderSidebar();}
 function bonusApplied(u,p){if(!u||!p||u.__leagueBonus)return u;const c=CARD_DB[u.card];if(!c||c.type!=='unit')return u;const up=p.upgrades?.[u.card]||{};const atk=(up.atk||0)+(p.buffs?.atk||0),hp=(up.hp||0)+(p.buffs?.hp||0);u.__leagueBonus=true;u.atk+=atk;u.hp+=hp;u.maxHp+=hp;return u;}
 summon=function(side,entry,row,index,by='player'){const u=originalSummon(side,entry,row,index,by);if(u&&league&&activePlayerMatch){const p=by==='player'?league.players[0]:league.players[league.currentMatches.find(x=>x.id===activePlayerMatch.matchId)?.a===0?league.currentMatches.find(x=>x.id===activePlayerMatch.matchId)?.b:league.currentMatches.find(x=>x.id===activePlayerMatch.matchId)?.a];bonusApplied(u,p);window.ArcanaSilver.onSummon(side,row,index,u);window.ArcanaSilver.refresh(by);}return u;};
 summonDeathDragon=function(owner,entry,row,index){const u=originalDragon(owner,entry,row,index);if(u&&league&&activePlayerMatch){const m=league.currentMatches.find(x=>x.id===activePlayerMatch.matchId);bonusApplied(u,league.players[owner==='player'?0:m.a===0?m.b:m.a]);window.ArcanaSilver.onSummon(game[owner],row,index,u);}return u;};
 showResult=function(){if(!league||!activePlayerMatch){originalShowResult();return;}
  const m=league.currentMatches.find(x=>x.id===activePlayerMatch.matchId);if(!m||m.result)return;
  // A is always the human side when this match is played via the existing 1v1 board.
- clearClock();window.ArcanaSilver.onBattleEnd();window.__silverPendingMapping=null;const playerIsA=m.a===0,who=game.winner;
+ clearClock();
+ // Capture the last board state before clearing augment context.
+ const mine=league.players[0],enemyPlayer=league.players[m.a===0?m.b:m.a];
+ grantEmptyFieldGold(mine,game.player);grantEmptyFieldGold(enemyPlayer,game.enemy);
+ window.ArcanaSilver.onBattleEnd();window.__silverPendingMapping=null;const playerIsA=m.a===0,who=game.winner;
  const seed=(((league.stage*101+league.round*29+m.a*19+m.b*71)*2654435761)>>>0);
  const drawn=who==='draw'?compareTimedSides(game.player,game.enemy,seed):null;
  let winner=who==='player'?'A':who==='enemy'?'B':drawn.winner;
@@ -257,7 +277,9 @@ const leagueTimerCSS=document.createElement('style');leagueTimerCSS.textContent=
 .lg-ingame-bar #leagueMatchClock.lg-timer-urgent{color:#ff9393;border-color:#f76d78;animation:lgPulse 1s ease-in-out infinite}
 @keyframes lgPulse{50%{opacity:.5}}
 `;document.head.appendChild(leagueTimerCSS);
-document.addEventListener('click',e=>{if(e.target.closest('#silverTransformBtn')){const ok=window.ArcanaSilver.transform('player');if(ok){e.target.closest('#silverTransformBtn')?.remove();if(typeof render==='function')render();}else{const msg=$L('leagueSidebarNotice');if(msg)msg.textContent='변환할 아군 유닛을 먼저 소환하세요.';}}});
+document.addEventListener('click',e=>{
+ if(e.target.closest('#silverRefreshBtn')){const active=window.ArcanaSilver.toggleRefreshMode('player');e.target.closest('#silverRefreshBtn').textContent=`🔄 ${active?'교체할 손패 선택 (취소하려면 다시 클릭)':'손패 새로 고침'} (${window.ArcanaSilver.refreshRemaining('player')}/3)`;}
+ if(e.target.closest('#silverTransformBtn')){const ok=window.ArcanaSilver.transform('player');if(ok){e.target.closest('#silverTransformBtn')?.remove();if(typeof render==='function')render();}else{const msg=$L('leagueSidebarNotice');if(msg)msg.textContent='변환할 아군 유닛을 먼저 소환하세요.';}}});
 $L('leagueSidebarToggle').addEventListener('click',()=>{sidebarCollapsed=!sidebarCollapsed;renderSidebar();});
 $L('leagueSidebarPlayers').addEventListener('click',e=>{const b=e.target.closest('button[data-side-player]');if(b)sidebarWatchPlayer(Number(b.dataset.sidePlayer));});
 $L('leagueOpen').addEventListener('click',newLeagueMenu);
