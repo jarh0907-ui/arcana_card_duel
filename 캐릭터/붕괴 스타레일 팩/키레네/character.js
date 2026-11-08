@@ -6,25 +6,18 @@
     name: '키레네',
     packId: 'honkai-star-rail',
     art: {
-      normal: base + 'images/normal.png',
-      restrained: base + 'images/mk1_restrained.png',
-      puppet: base + 'images/puppet.png',
-      tribal: base + 'images/tribal.png',
+      normal: base + 'images/normal.webp',
+      restrained: base + 'images/mk1_restrained.webp',
+      puppet: base + 'images/puppet.webp',
+      tribal: base + 'images/tribal.webp',
       tribalStage2: base + 'images/tribal2.webp',
-      awakened: base + 'images/kyrene_awakened.png',
-      heartBuff: base + 'images/kyrene_heart_buff.png',
-      spellNormal: base + 'images/kyrene_spell_normal.png',
-      spellAwakened: base + 'images/kyrene_spell_awakened.png'
+      awakened: base + 'images/kyrene_awakened.webp',
+      heartBuff: base + 'images/kyrene_heart_buff.webp',
+      spellNormal: base + 'images/kyrene_spell_normal.webp',
+      spellAwakened: base + 'images/kyrene_spell_awakened.webp'
     },
-    weapon: {bow: base + 'images/bow.png', arrow: base + 'images/arrow.png',
-      awakenedBow: base + 'images/kyrene_awaken_bow.png', awakenedArrow: base + 'images/kyrene_awaken_arrow.png'},
-    voice: {
-      meet: [base+'audio/meet1.wav',base+'audio/meet2.wav',base+'audio/meet3.wav',base+'audio/meet4.wav'],
-      select: [base+'audio/select1.wav'],
-      meetanimal: [base+'audio/meetanimal1.wav',base+'audio/meetanimal2.wav'],
-      selectanimal: [base+'audio/selectanimal1.wav',base+'audio/selectanimal2.wav'],
-      meetdol: [base+'audio/meetdol1.wav',base+'audio/meetdol2.wav'],
-      selectdol: [base+'audio/selectdol1.wav',base+'audio/selectdol2.wav']
-    }
+    weapon: {bow: base + 'images/bow.webp', arrow: base + 'images/arrow.webp',
+      awakenedBow: base + 'images/kyrene_awaken_bow.webp', awakenedArrow: base + 'images/kyrene_awaken_arrow.webp'},
+    voice: {}
   });
 })(window.ArcanaCharacterLibrary);

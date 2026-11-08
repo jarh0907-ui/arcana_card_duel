@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
-<title>아르카나 카드 듀얼 v1.2.2 · 8인 리그 자동 전투 · 3분 제한</title>
+<title>아르카나 카드 듀얼 WEB v1.2.5 — 1대1 · 8인 리그</title>
 <style>
 :root{color-scheme:dark;--bg:#0a1021;--panel:#101b32;--panel2:#19263f;--line:#3c4c68;--text:#eff4ff;--muted:#9caec9;--gold:#f2c67d;--blue:#72bafa;--red:#f5838b;--mint:#80dbbb;--card:#243450}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 60% -30%,#293d67 0%,#0a1021 55%),var(--bg);font-family:system-ui,-apple-system,'Noto Sans KR',sans-serif;color:var(--text);min-height:100vh}button{font:inherit;cursor:pointer;color:inherit}button:disabled{cursor:not-allowed;opacity:.48}button:focus-visible{outline:3px solid #f2ca89;outline-offset:3px} .app{max-width:1340px;margin:auto;padding:24px 20px 28px}
@@ -482,8 +482,8 @@ body.league-sidebar-collapsed .league-sidepanel .lg-side-footer{display:none}
 <body>
 <div class="app">
 <header>
-<div><div class="kicker">PLAYABLE PROTOTYPE · v1.2.2 자동 전투 · 3분 제한</div><h1><span>아르카나</span> 카드 듀얼</h1></div>
-<div class="head-actions"><button class="secondary-btn" id="leagueOpen" title="8인 경쟁 모드 · 골드 및 상점">🏆 8인 리그</button><button aria-pressed="false" class="secondary-btn" id="soundToggle" title="효과음 및 캐릭터 음성 전체 음소거">🔇 음소거</button><button aria-pressed="false" class="secondary-btn" id="speedToggle" title="전투 연출 배속">⏩ 1배속</button><button class="secondary-btn" id="rulesButton">❔ 규칙 보기</button><button class="secondary-btn" id="restartButton">↻ 새 게임</button></div>
+<div><div class="kicker">WEB v1.2.5 · 실버 증강 20종 · 8인 리그</div><h1><span>아르카나</span> 카드 듀얼</h1></div>
+<div class="head-actions"><button class="secondary-btn" id="leagueOpen" title="8인 경쟁 모드 · 골드 및 상점">🏆 8인 리그</button><button aria-pressed="false" class="secondary-btn" id="soundToggle" title="전투 효과음 음소거">🔇 음소거</button><button aria-pressed="false" class="secondary-btn" id="speedToggle" title="전투 연출 배속">⏩ 1배속</button><button class="secondary-btn" id="rulesButton">❔ 규칙 보기</button><button class="secondary-btn" id="restartButton">↻ 새 게임</button></div>
 </header>
 <div id="leagueGameBar" class="lg-ingame-bar" hidden></div>
 
@@ -570,12 +570,12 @@ const KYRENE_TRIBAL2_ART='./캐릭터/붕괴 스타레일 팩/키레네/images/t
 const CURSE_SPELL_ART=CHARACTERS.getSpell('curse_staff').art;
 const FIRE_ARROW_ART=CHARACTERS.getSpell('fire_arrow').art;
 const AXE_SPELL_ART=CHARACTERS.getSpell('axe_swing').art;
-const KYRENE_AWAKENED_ART='./캐릭터/붕괴 스타레일 팩/키레네/images/kyrene_awakened.png';
-const KYRENE_AWAKEN_ARROW='./캐릭터/붕괴 스타레일 팩/키레네/images/kyrene_awaken_arrow.png';
-const KYRENE_AWAKEN_BOW='./캐릭터/붕괴 스타레일 팩/키레네/images/kyrene_awaken_bow.png';
-const KYRENE_HEART_SIGIL='./캐릭터/붕괴 스타레일 팩/키레네/images/kyrene_heart_buff.png';
-const KYRENE_SPELL_NORMAL_ART='./캐릭터/붕괴 스타레일 팩/키레네/images/kyrene_spell_normal.png';
-const KYRENE_SPELL_AWAKENED_ART='./캐릭터/붕괴 스타레일 팩/키레네/images/kyrene_spell_awakened.png';
+const KYRENE_AWAKENED_ART='./캐릭터/붕괴 스타레일 팩/키레네/images/kyrene_awakened.webp';
+const KYRENE_AWAKEN_ARROW='./캐릭터/붕괴 스타레일 팩/키레네/images/kyrene_awaken_arrow.webp';
+const KYRENE_AWAKEN_BOW='./캐릭터/붕괴 스타레일 팩/키레네/images/kyrene_awaken_bow.webp';
+const KYRENE_HEART_SIGIL='./캐릭터/붕괴 스타레일 팩/키레네/images/kyrene_heart_buff.webp';
+const KYRENE_SPELL_NORMAL_ART='./캐릭터/붕괴 스타레일 팩/키레네/images/kyrene_spell_normal.webp';
+const KYRENE_SPELL_AWAKENED_ART='./캐릭터/붕괴 스타레일 팩/키레네/images/kyrene_spell_awakened.webp';
 const CASTORICE=CHARACTERS.getCharacter('castorice');
 const CASTORICE_ART=CASTORICE.art;
 const CASTORICE_WEAPON=CASTORICE.weapon;
@@ -900,76 +900,10 @@ function soundFx(kind='hit'){
  try{if(kind==='bow'){tone(380,900,.18,.13,'triangle');tone(870,410,.3,.075,'sine');}
  else if(kind==='hit'){noise(.19,480,.2);tone(180,55,.2,.18,'triangle');tone(950,320,.1,.036,'sawtooth');}else if(kind==='spell'){noise(.28,1450,.13);tone(620,120,.29,.13,'sawtooth');}else if(kind==='heal'){tone(450,840,.32,.095);tone(640,1080,.32,.065);}else if(kind==='summon'){tone(300,580,.17,.065);tone(530,900,.22,.045);}else if(kind==='turn'){tone(250,120,.25,.12,'triangle');}else if(kind==='miss'){noise(.17,1900,.035);tone(550,260,.2,.055,'triangle');}else if(kind==='tribal'){tone(185,770,.73,.19,'sawtooth');tone(690,205,.62,.09,'triangle');noise(.48,1900,.16);}}catch(e){}
 }
-// v0.8.6: per-form character voices with one exclusive channel and post-playback cooldown.
-const VOICE_COOLDOWN_MS=5000;
-const characterVoice={audio:null,playing:false,cooldownUntil:0,token:0,pending:null,queueTimer:null};
-function clearCharacterVoiceQueue(){
- if(characterVoice.queueTimer!==null){clearTimeout(characterVoice.queueTimer);characterVoice.queueTimer=null;}
- characterVoice.pending=null;
-}
-function schedulePendingCharacterVoice(){
- if(!soundEnabled||characterVoice.playing||!characterVoice.pending||characterVoice.queueTimer!==null)return;
- const delay=Math.max(0,characterVoice.cooldownUntil-performance.now())+15;
- characterVoice.queueTimer=setTimeout(()=>{
-  characterVoice.queueTimer=null;
-  if(!soundEnabled||characterVoice.playing)return;
-  if(performance.now()<characterVoice.cooldownUntil){schedulePendingCharacterVoice();return;}
-  const pending=characterVoice.pending;characterVoice.pending=null;
-  if(pending)playCharacterVoice(pending.id,pending.event);
- },delay);
-}
-function finishCharacterVoice(audio,token,endedNormally=true){
- if(characterVoice.audio!==audio||characterVoice.token!==token)return;
- characterVoice.audio=null;
- characterVoice.playing=false;
- // The full five seconds begin only AFTER the clip finishes, not when it begins.
- if(endedNormally)characterVoice.cooldownUntil=performance.now()+VOICE_COOLDOWN_MS;
- audio.onended=null;audio.onerror=null;
- schedulePendingCharacterVoice();
-}
-function stopCharacterVoice(resetCooldown=false){
- const audio=characterVoice.audio;
- characterVoice.token++;
- characterVoice.audio=null;
- characterVoice.playing=false;
- clearCharacterVoiceQueue();
- characterVoice.cooldownUntil=resetCooldown?0:performance.now()+VOICE_COOLDOWN_MS;
- if(audio){audio.onended=null;audio.onerror=null;try{audio.pause();audio.currentTime=0;}catch(e){}}
-}
-function playCharacterVoice(id,event,queueIfBusy=false){
- if(!soundEnabled||liteFx())return false;
- const clips=CHARACTERS.getCharacter(id)?.voice?.[event];
- if(!clips?.length)return false;
- if(characterVoice.playing||performance.now()<characterVoice.cooldownUntil){
-  // Transformation is a one-time story beat. Keep at most one pending transition
-  // rather than playing it on top of an existing line or repeatedly on clicks.
-  if(queueIfBusy){characterVoice.pending={id,event};schedulePendingCharacterVoice();}
-  return false;
- }
- const url=clips[Math.floor(Math.random()*clips.length)];
- let audio;
- try{audio=new Audio(url);}catch(e){return false;}
- audio.preload='auto';audio.volume=.95;
- const token=++characterVoice.token;
- characterVoice.audio=audio;characterVoice.playing=true;
- audio.onended=()=>finishCharacterVoice(audio,token,true);
- audio.onerror=()=>finishCharacterVoice(audio,token,false);
- try{
-  const result=audio.play();
-  if(result?.catch)result.catch(()=>finishCharacterVoice(audio,token,false));
- }catch(e){finishCharacterVoice(audio,token,false);return false;}
- return true;
-}
-function voiceEventForUnit(u,kind){
- if(u?.tribal)return kind==='select'?'selectanimal':'meetanimal';
- if(u?.puppet)return kind==='select'?'selectdol':'meetdol';
- return kind;
-}
-function onUnitEnteredField(u){if(u)playCharacterVoice(u.card,voiceEventForUnit(u,'meet'));}
-function onUnitTransformed(u,status){
- if(!u)return;
- playCharacterVoice(u.card,status==='puppet'?'meetdol':'meetanimal',true);
-}
+// v1.2.5: no downloaded character voices; game hooks remain for compatibility.
+function stopCharacterVoice(){}
+function onUnitEnteredField(){}
+function onUnitTransformed(){}
 function combatEl(side,row,index){if(row==='hero')return $(`${side}Hero`).querySelector('.avatar')||$(`${side}Hero`);return $(`${side}${row[0].toUpperCase()}${row.slice(1)}`).children[index]?.querySelector('.unit')||null}
 function boardRect(){return document.querySelector('.board').getBoundingClientRect()}
 function coords(el){const b=boardRect(),r=el.getBoundingClientRect();return{x:r.left-b.left+r.width/2,y:r.top-b.top+r.height/2,left:r.left-b.left,top:r.top-b.top,w:r.width,h:r.height}}
@@ -1285,7 +1219,7 @@ function restoreCaptive(machine){if(!machine?.bound)return;
 function transferVictim(victim,toOwner,status){if(immuneToDebuff(victim))return;const side=game[toOwner],space=openSpace(side,victim.card);
  if(victim.card==='castorice'&&(status==='puppet'||status==='tribal'))despawnLinkedDragons(victim.id,'카스토리스 진영 전환');
  victim.ready=false;victim.curse=null;victim.spellBound=false;victim.bindTurns=0;victim.puppet=status==='puppet';victim.tribal=status==='tribal';
- // Only one transformation voice: don't also trigger the default field-entry meet line.
+ // Transformation state remains independent of optional recorded speech.
  onUnitTransformed(victim,status);
  if(space){side[space.row][space.index]=victim;syncKyreneState();log(`${CARD_DB[victim.card].name}이(가) ${status==='puppet'?'인형화':'부족화'}되어 ${toOwner==='player'?'아군':'상대'} 필드로 넘어감!`,toOwner==='player'?'good-log':'enemy-log');}
  else{side.deck.unshift({...victim});syncKyreneState();log(`${CARD_DB[victim.card].name}: ${status==='puppet'?'인형화':'부족화'} 완료! 대상 진영에 빈 슬롯이 없어 덱에 보관됨`,'enemy-log');}
@@ -1660,7 +1594,7 @@ function onFieldClick(sideName,row,index){unlockAudio();if(devCastoriceMode){dev
    if(old){game.plans.player=game.plans.player.filter(p=>p!==old);game.selected=CARD_DB[unit.card].hut?{kind:'hut-chuchu',hutId:unit.id}:{kind:'attacker',row,index,unitId:unit.id};}
    else if(s?.kind==='hut-chuchu'&&s.hutId===unit.id||s?.kind==='attacker'&&s.unitId===unit.id)game.selected=null;
    else game.selected=CARD_DB[unit.card].hut?{kind:'hut-chuchu',hutId:unit.id}:{kind:'attacker',row,index,unitId:unit.id};
-   if(game.selected?.kind==='attacker'&&game.selected.unitId===unit.id)playCharacterVoice(unit.card,voiceEventForUnit(unit,'select'));
+   
    render();return;
   }
  }
@@ -1808,7 +1742,7 @@ function aiPickPlans(owner='enemy'){
   else target=targets.sort((a,b)=>(b.u.card==='kyrene')-(a.u.card==='kyrene')||(b.u.curse?.progress||0)-(a.u.curse?.progress||0)||b.u.atk-a.u.atk)[0];
   if(target&&markPlan(owner,from,target)){
    // AI-controlled converted Kyrene also speaks when selecting an attack target.
-   playCharacterVoice(from.u.card,voiceEventForUnit(from.u,'select'));
+   
   }
  }
 }
@@ -1982,11 +1916,11 @@ function renderField(sideName,row){const side=game[sideName],node=$(`${sideName}
  const stealth=isStealth(u),classes=['slot',!u?'empty':'',devKillMode&&u?'dev-killable':'',selectable?'clickable':'',selectable&&sideName==='enemy'?'attack-target':'',selectable&&sideName==='player'?'ally-target':'',canAttack?'ally-planner':'',stealth?'stealth-slot':'',beingTargeted?'planned-target':'',plan?'planned-attacker':''].filter(Boolean).join(' ');
  let content;if(u){const c=CARD_DB[u.card],unitArt=artFor(u),flags=[u.silverBond?'<span class="effect-label reunion">💞 공동 체력</span>':'',u.silverReflect?`<span class="effect-label">🛡 반사 ${u.silverReflect}</span>`:'',u.awakened?(u.card==='kyrene'?'<span class="effect-label awakened">✨ 각성 · 구속/특수 저주 면역</span>':'<span class="effect-label awakened">✨ 각성 · 구속/특수 저주 면역</span>'):'',u.kyreneBlessing?`<span class="effect-label reunion">💗 첫 만남 같은 재회${u.kyreneBlessing.awakened?' · 재생':''}</span>`:'',u.machineState==='working'?'<span class="effect-label machine">⚙ 다음 턴 인형화</span>':'',u.machineState==='puppet-ready'?'<span class="effect-label machine">🪆 인형화 차례</span>':'',u.machineState==='preparing'?`<span class="effect-label machine">⚙ 준비 ${u.machineTurn||1}/2턴</span>`:'',u.machineState==='capture-ready'?'<span class="effect-label machine">⛓ 구속 가능</span>':'',u.machineState==='resting'?'<span class="effect-label machine">☕ 휴식</span>':'',c.dragon?'<span class="effect-label awakened">🛡 디버프 면역</span>':'',u.curse?`<span class="effect-label curse">🌀 저주 ${cursePercent(u.curse.progress)}%</span>`:'',u.puppet?'<span class="effect-label puppet">🪆 인형화</span>':'',u.tribalStage2?'<span class="effect-label tribal">부족화-2 · 공격 불가</span>':'',u.hutTask?`<span class="effect-label machine">🏕 작업 ${u.hutTask.turns}턴 남음</span>`:'',u.spellBound?'<span class="effect-label bind">⛓ 구속</span>':'',u.tribal?'<span class="effect-label tribal">🪶 부족화</span>':'',stealth?'<span class="effect-label">🌫 은신</span>':'',c.ranged?'<span class="effect-label">🏹 원거리</span>':'',c.pierce?'<span class="effect-label pierce">⚔ 관통</span>':'',c.absorb?'<span class="effect-label absorb">♥ 흡수</span>':'',u.bound?'<span class="effect-label bind">⛓ 속박</span>':'',...(u.equipment||[]).map(id=>`<span class="effect-label equipment" title="${escapeHtml(CARD_DB[id].name)}">${CARD_DB[id].icon} ${escapeHtml(CARD_DB[id].name)}</span>`)].filter(Boolean).join('');
  const hutOccupants=u.hutTask?`<div class="hut-occupied" aria-label="오두막 작업 중인 두 카드"><span class="hut-occupied-title">🏠 입장한 카드 2장 · ${u.hutTask.turns}턴</span><span>${escapeHtml(displayUnitName(u.hutTask.chuchu))}</span><span>${escapeHtml(displayUnitName(u.hutTask.mate))}</span><span class="hut-hearts" aria-hidden="true"><span>💗</span><span>💗</span></span></div>`:'';
- const bound=u.bound?`<div class="bound-card" aria-label="속박된 ${escapeHtml(displayUnitName(u.bound))}"><span class="bound-icon">${artFor(u.bound,!!c.machine)?`<img class="bound-thumbnail" src="${artFor(u.bound,!!c.machine)}" alt="">`:CARD_DB[u.bound.card].icon}</span><span class="bound-name">${escapeHtml(displayUnitName(u.bound))}</span><span class="bound-hp">♥${u.bound.hp}</span></div>`:'';
+ const bound=u.bound?`<div class="bound-card" aria-label="속박된 ${escapeHtml(displayUnitName(u.bound))}"><span class="bound-icon">${artFor(u.bound,!!c.machine)?`<img loading="lazy" decoding="async" class="bound-thumbnail" src="${artFor(u.bound,!!c.machine)}" alt="">`:CARD_DB[u.bound.card].icon}</span><span class="bound-name">${escapeHtml(displayUnitName(u.bound))}</span><span class="bound-hp">♥${u.bound.hp}</span></div>`:'';
  const statBase=originUnitStats(u),atkColor=statCompareClass(u.atk,statBase.atk),hpColor=statCompareClass(u.hp,statBase.hp);
- const heartBuff=u.kyreneBlessing?`<div class="kyrene-heart-buff" aria-hidden="true"><img src="${KYRENE_HEART_SIGIL}" alt=""></div>`:'';
+ const heartBuff=u.kyreneBlessing?`<div class="kyrene-heart-buff" aria-hidden="true"><img loading="lazy" decoding="async" src="${KYRENE_HEART_SIGIL}" alt=""></div>`:'';
  const progression=u.card==='castorice'&&!u.awakened?`<span class="effect-label" title="진영 누적 각성 진행도">✨ ${escapeHtml(championProgressText(u.homeSide||sideName,'castorice'))}</span>`:c.dragon?`<span class="effect-label">🐉 누적 공격 ${u.dragonAttacks||0}회 · 소모 ${dragonAttackCost(u)}♥</span>`:'';
- content=`<div class="unit ${sideName==='enemy'?'enemy-unit':''} ${u.ready?'ready':''} ${selected?'selected':''} ${stealth?'stealthed':''} ${u.bound?'bound-host':''} ${unitArt?'has-art':''} ${u.machineState==='working'?'machine-working':''} ${u.curse?'is-cursed':''} ${u.puppet?'is-puppet':''} ${u.tribal?'is-tribal':''} ${u.spellBound?'spell-bound':''} ${u.hutTask?'hut-rocking':''} ${unitShield(u)?'has-shield':''} ${u.awakened?'is-awakened':''} ${u.kyreneBlessing?'has-reunion buff-awakened':''}"><span class="tag ${canPlanAction(u)?'':'exhausted'}">${u.hutTask?`작업 ${u.hutTask.turns}턴`:u.tribalStage2?'공격 불가':u.machineState==='working'?'인형화 대기':u.machineState==='puppet-ready'?'인형화 예정':u.machineState==='preparing'?`준비 ${u.machineTurn||1}/2`:u.machineState==='resting'?'휴식':u.spellBound?'⛓ 행동 불가':canPlanAction(u)?'행동 가능':'대기'}</span>${plan?`<span class="unit-plan-label">${plan.kind==='machine'?'⛓':plan.kind==='curse'?'🌀':plan.kind==='hut'?'🏕':'⚔'}${planPosition} → ${plan.kind==='hut'?'입장':plan.toRow==='hero'?'본체':(plan.toRow==='front'?'전':'후')+(plan.toIndex+1)}</span>`:''}${beingTargeted?`<span class="target-plan-label">🎯 ${beingTargeted}건 예약</span>`:''}${unitShield(u)?`<div class="shield-barrier" aria-hidden="true"><span class="shield-panel"></span><span class="shield-rim"></span></div><span class="shield-title">보호막 · 피해 -1</span>`:''}<div class="u-art">${unitArt?`<img src="${unitArt}" alt="" draggable="false">`:c.icon}</div>${heartBuff}${bound}${hutOccupants}<div class="effect-flags">${progression}${flags}</div><div class="u-name">${escapeHtml(displayUnitName(u))}${kyreneArtState(u)}</div><div class="u-stats"><span class="stat atk ${atkColor}">⚔ ${u.atk}</span><span class="stat hp ${hpColor}">♥ ${u.hp}${u.silverBond?' 💞':''}</span></div></div>`;
+ content=`<div class="unit ${sideName==='enemy'?'enemy-unit':''} ${u.ready?'ready':''} ${selected?'selected':''} ${stealth?'stealthed':''} ${u.bound?'bound-host':''} ${unitArt?'has-art':''} ${u.machineState==='working'?'machine-working':''} ${u.curse?'is-cursed':''} ${u.puppet?'is-puppet':''} ${u.tribal?'is-tribal':''} ${u.spellBound?'spell-bound':''} ${u.hutTask?'hut-rocking':''} ${unitShield(u)?'has-shield':''} ${u.awakened?'is-awakened':''} ${u.kyreneBlessing?'has-reunion buff-awakened':''}"><span class="tag ${canPlanAction(u)?'':'exhausted'}">${u.hutTask?`작업 ${u.hutTask.turns}턴`:u.tribalStage2?'공격 불가':u.machineState==='working'?'인형화 대기':u.machineState==='puppet-ready'?'인형화 예정':u.machineState==='preparing'?`준비 ${u.machineTurn||1}/2`:u.machineState==='resting'?'휴식':u.spellBound?'⛓ 행동 불가':canPlanAction(u)?'행동 가능':'대기'}</span>${plan?`<span class="unit-plan-label">${plan.kind==='machine'?'⛓':plan.kind==='curse'?'🌀':plan.kind==='hut'?'🏕':'⚔'}${planPosition} → ${plan.kind==='hut'?'입장':plan.toRow==='hero'?'본체':(plan.toRow==='front'?'전':'후')+(plan.toIndex+1)}</span>`:''}${beingTargeted?`<span class="target-plan-label">🎯 ${beingTargeted}건 예약</span>`:''}${unitShield(u)?`<div class="shield-barrier" aria-hidden="true"><span class="shield-panel"></span><span class="shield-rim"></span></div><span class="shield-title">보호막 · 피해 -1</span>`:''}<div class="u-art">${unitArt?`<img loading="lazy" decoding="async" src="${unitArt}" alt="" draggable="false">`:c.icon}</div>${heartBuff}${bound}${hutOccupants}<div class="effect-flags">${progression}${flags}</div><div class="u-name">${escapeHtml(displayUnitName(u))}${kyreneArtState(u)}</div><div class="u-stats"><span class="stat atk ${atkColor}">⚔ ${u.atk}</span><span class="stat hp ${hpColor}">♥ ${u.hp}${u.silverBond?' 💞':''}</span></div></div>`;
  }else content=`<div class="slot-text">＋<span>${row==='front'?'전열':'후열'} ${index+1}</span></div>`;
  return `<button class="${classes}" onclick="onFieldClick('${sideName}','${row}',${index})" aria-label="${sideName==='enemy'?'상대':'아군'} ${row==='front'?'전열':'후열'} ${index+1} ${u?escapeHtml(displayUnitName(u)):'빈칸'}${stealth?' 은신':''}${u?.bound?' 속박 중':''}" ${(!selectable&&!canAttack&&!devCastoriceMode)?'disabled':''}>${content}</button>`;}).join('');}
 function renderHand(){const side=game.player;$('hand').innerHTML=side.hand.length?side.hand.map((entry,index)=>{const c=resolvedHandCard('player',entry),selected=game.selected?.kind==='hand'&&game.selected.index===index;
@@ -1998,7 +1932,7 @@ function renderHand(){const side=game.player;$('hand').innerHTML=side.hand.lengt
  const titleName=proxy?c.name:displayUnitName(entry);
  const extra=dragonLimit?'<span class="proxy-lock dead">이미 죽음의 용이 필드에 있습니다 (동시에 1마리)</span>':proxy?`<span class="proxy-lock ${proxyUsable?'':'dead'}">${proxyUsable?`${proxyCharacterName(entry)} 전용 스펠`:`${proxyCharacterName(entry)}가 필드에 없어 사용 불가`}</span>`:'';
  const handStats=baseId==='kyrene'&&!proxy?`<div class="h-stats"><span>⚔ ${CARD_DB.kyrene.atk}</span><span>♥ ${CARD_DB.kyrene.hp}</span></div>`:c.type==='unit'?`${c.shield?'<span class="hand-shield-text">보호막 · 피해 -1</span>':''}<div class="h-stats"><span>⚔ ${c.atk}</span><span>♥ ${c.hp}</span></div>`:c.type==='item'?`<div class="h-stats"><span>⚔ +${c.bonusAtk}</span><span>${c.shield?'보호막 -1':`♥ +${c.bonusHp}`}</span></div>`:'<div class="h-stats">✦ 즉시 발동</div>';
- return `<button class="hand-card ${c.type==='spell'?'spell':c.type==='item'?'item':''} ${handArt?'has-art':''} ${selected?'selected':''} ${!manaEnough?'unaffordable':''} ${(proxy&&!proxyUsable)||dragonLimit?'disabled-proxy':''}" onclick="selectHand(${index})" ${disabled?'disabled':''} aria-label="${escapeHtml(titleName)} 비용 ${c.cost}"><span class="h-cost">${c.cost}</span><div class="h-art">${handArt?`<img src="${handArt}" alt="" draggable="false">`:c.icon}</div><div class="h-name">${escapeHtml(titleName)}</div><div class="h-kind">${kind}${proxy?' · '+proxyCharacterName(entry)+' 전용':''}${entry.spellBound?' · ⛓ 구속':''}${entry.puppet?' · 🪆 인형화':''}${entry.tribal?' · 🪶 부족화':''}</div><div class="h-desc">${escapeHtml(c.desc)}</div>${extra}${handStats}</button>`;}).join(''):'<div class="empty-hand">손패가 없습니다. 다음 턴에 카드를 뽑습니다.</div>';}
+ return `<button class="hand-card ${c.type==='spell'?'spell':c.type==='item'?'item':''} ${handArt?'has-art':''} ${selected?'selected':''} ${!manaEnough?'unaffordable':''} ${(proxy&&!proxyUsable)||dragonLimit?'disabled-proxy':''}" onclick="selectHand(${index})" ${disabled?'disabled':''} aria-label="${escapeHtml(titleName)} 비용 ${c.cost}"><span class="h-cost">${c.cost}</span><div class="h-art">${handArt?`<img loading="lazy" decoding="async" src="${handArt}" alt="" draggable="false">`:c.icon}</div><div class="h-name">${escapeHtml(titleName)}</div><div class="h-kind">${kind}${proxy?' · '+proxyCharacterName(entry)+' 전용':''}${entry.spellBound?' · ⛓ 구속':''}${entry.puppet?' · 🪆 인형화':''}${entry.tribal?' · 🪶 부족화':''}</div><div class="h-desc">${escapeHtml(c.desc)}</div>${extra}${handStats}</button>`;}).join(''):'<div class="empty-hand">손패가 없습니다. 다음 턴에 카드를 뽑습니다.</div>';}
 function render(){if(!game)return;if(window.ArcanaSilver){window.ArcanaSilver.refresh('player');window.ArcanaSilver.refresh('enemy');}syncKyreneState();updateDevKillUi();
  const simBtn=$('devAiSim');if(simBtn){simBtn.textContent=simulating?'⏹ AI 시뮬레이션 중지':'🤖 AI vs AI 시작';simBtn.classList.toggle('running',simulating);simBtn.setAttribute('aria-pressed',String(simulating));}
 
@@ -2027,7 +1961,7 @@ function render(){if(!game)return;if(window.ArcanaSilver){window.ArcanaSilver.re
 function showOverlay(html){$('modalContent').innerHTML=html;$('overlay').classList.remove('hidden')}
 function hideOverlay(){$('overlay').classList.add('hidden')}
 function showResult(){let win=game.winner==='player',draw=game.winner==='draw';showOverlay(`<div style="font-size:51px">${draw?'🤝':win?'🏆':'💔'}</div><h2>${draw?'무승부':win?'승리!':'패배!'}</h2><p>${draw?'양쪽 본체가 동시에 쓰러졌습니다.':win?'상대 마도사를 쓰러뜨렸습니다!':'내 마도사의 체력이 0이 되었습니다.'}<br>${game.turn}턴까지 진행했습니다.</p><div class="btn-row"><button class="primary-btn" onclick="newGame()">다시 플레이</button></div>`)}
-function showRules(){showOverlay(`<div class="rules"><h2>📘 게임 규칙 · v1.2.2</h2>
+function showRules(){showOverlay(`<div class="rules"><h2>📘 게임 규칙 · v1.2.5</h2>
  <p><b>8인 리그:</b> 경기 시작과 다음 전투 라운드가 자동 연결됩니다. 전투별 제한 시간은 3분이며 본체 체력 → 필드 전력 → 남은 카드 수 순서로 판정하고, 완전 동률일 때 고정 시드로 결정합니다. 상점은 구매 완료까지 자동으로 넘어가지 않습니다. AI끼리의 대전은 3분에 해당하는 24턴의 경량 수치 시뮬레이션을 사용합니다.</p>
  <p><b>턴:</b> 시작 손패는 각자 <b>4장</b>이며, 두 번째 자기 턴부터 매 턴 <b>2장씩 드로우</b>합니다(손패 최대 9장). A → B 순으로 진행. 각 플레이어는 ① 소환 ② 공격·능력 대상 예약 ③ 마법 사용 ④ 예약 공격 실행의 4단계를 거칩니다. 플레이어는 아래 진행 버튼으로 다음 단계로 넘어갑니다.</p>
  <p><b>라인 전투·재배치:</b> 일반 공격은 공격자가 서 있는 번호의 세로 라인에서만 할 수 있습니다. 근접은 해당 라인 전열 우선, 원거리 후열은 같은 라인 상대 전열만 공격합니다. ② 공격 지정 단계에서 공격자는 아군 2장의 자리를 1회 맞바꿀 수 있습니다. ③ 마법 이후 수비자는 공격 예약을 보고 자기 유닛 2장의 위치를 1회 맞바꿀 수 있습니다. 빈칸 이동은 불가, 전·후열 배치 제한과 오두막 작업 제한은 유지됩니다. 일반 공격은 <b>칸 지정</b>이므로 교환 후 그 칸에 선 유닛이 맞습니다. 광역 효과는 고유 범위로 적용됩니다. 라인이 완전히 비어 있으면 전열에서 본체를 공격할 수 있습니다.</p>
