@@ -25,7 +25,7 @@ const DATA=[
  ['use_every_slot','다 쓸데가 있다니까','게임이 끝났을 때 빈 칸 한 개당 33% 확률로 1골드를 획득합니다.','use_every_slot.webp'],
  ['exploration','탐사','가장 오른쪽 후열칸에 있는 유닛을 잃습니다. 마나 33 만큼의 유닛을 잃으면 큰 보상을 얻습니다.','exploration.webp'],
  ['make_way','길을 내라','근접 유닛 전용 무기 카드를 2장 뽑습니다.','make_way.webp'],
- ['mysterious_die','약간 신비한 주사위','주사위를 굴려 나온 결과에 따라 보상을 얻습니다.','mysterious_die.webp'],
+ ['mysterious_die','약간 신비한 주사위','주사위 1~6의 결과에 따라 각각 2/4/7/10/13/17골드를 즉시 얻습니다.','mysterious_die.webp'],
  ['electric_shock_1','전기 충격 1','아군이 한 턴에 4번 공격당할 때마다 적 전체에게 데미지 1을 줍니다.','electric_shock_1.webp'],
  ['spare_bow','예비 활','원거리 유닛 전용 무기 카드를 2장 뽑습니다.','spare_bow.webp'],
  ['refresh_day','새로 고침의 날','현재 패에 있는 카드를 최대 3번 바꿀 수 있습니다.','refresh_day.webp'],
@@ -49,6 +49,7 @@ function has(s,id){return !!s?.augments?.includes(id);}
 function get(side){return ctx?.[side]||null;}
 function all(s){return !s?[]:['front','back'].flatMap(row=>s[row].map((u,index)=>u?{row,index,u}:null).filter(Boolean));}
 function finishTimer(){refreshMode=false;if(readyTimer){clearTimeout(readyTimer);readyTimer=null;}if(root.__silverGame){for(const side of ['player','enemy'])unlinkBond(root.__silverGame[side],true);}ctx=null;attacker=null;}
+const MYSTERIOUS_DIE_GOLD=[2,4,7,10,13,17];
 function applySelection(p,id){if(!DATA_BY_ID[id]||p.augments?.length)return false;
  p.augments=[id];p.silver={};
  if(id==='giant'){p.maxGlobalHp=(p.maxGlobalHp||100)+20;p.hp+=20;}
@@ -57,6 +58,12 @@ function applySelection(p,id){if(!DATA_BY_ID[id]||p.augments?.length)return fals
  if(id==='predict_result')p.streak=4;
  if(id==='refresh_day')p.silver.refreshRemaining=3;
  if(id==='exploration'){p.silver.exploredMana=0;p.silver.explorationReady=false;}
+ if(id==='mysterious_die'){
+  const result=Math.floor(Math.random()*6)+1;
+  const reward=MYSTERIOUS_DIE_GOLD[result-1];
+  p.silver.diceRoll=result;p.silver.diceGold=reward;
+  p.gold+=reward;
+ }
  return true;
 }
 function beforeIncome(p,baseInterest){if(has(p,'short_invest')&&p.silver?.noInterest>0){p.silver.noInterest--;return 0;}return baseInterest;}
@@ -226,8 +233,8 @@ function refreshSelectedHand(owner,index){
 }
 function visualSkipTurn(owner){const side=root.__silverGame?.[owner];if(!side?.silverSkip)return false;side.silverSkip--;return true;}
 function getVisualPlayer(owner){return get(owner);}
-function htmlCard(x){return `<button type="button" class="silver-choice" data-silver-pick="${x.id}" ${x.id==='mysterious_die'?'disabled title="보상표 미정: 구현 대기"':`title="${x.name}: ${x.desc}"`}><img loading="lazy" decoding="async" src="${x.image}" alt="${x.name}"><strong>${x.name}</strong><span class="silver-effect">${x.desc}</span></button>`;}
-function choiceMarkup(){return `<div class="lg-card silver-screen"><h2>⬜ 실버 증강 선택 · ${DATA.length}종 테스트</h2><p class="lg-muted">이번 리그에서 사용할 실버 증강을 1개 선택하세요. 제시 카드 ${DATA.length}종 중 원하는 증강을 시험할 수 있습니다. AI 7명도 각자 1개씩 선택합니다.</p><div class="silver-grid">${DATA.map(htmlCard).join('')}</div><p class="lg-muted">증강 선택 시점은 1-1 전투 시작 전으로 임시 적용했습니다. 골드/프리즘 증강은 아직 없습니다.</p></div>`;}
+function htmlCard(x){return `<button type="button" class="silver-choice" data-silver-pick="${x.id}" title="${x.name}: ${x.desc}"><img loading="lazy" decoding="async" src="${x.image}" alt="${x.name}"><strong>${x.name}</strong><span class="silver-effect">${x.desc}</span></button>`;}
+function choiceMarkup(){return `<div class="lg-card silver-screen"><h2>⬜ 실버 증강 선택 · ${DATA.length}종 테스트</h2><p class="lg-muted">이번 리그에서 사용할 실버 증강을 1개 선택하세요. 제시 카드 ${DATA.length}종 중 원하는 증강을 시험할 수 있습니다. AI 7명도 각자 1개씩 선택합니다.</p><div class="silver-grid">${DATA.map(htmlCard).join('')}</div><p class="lg-muted">증강은 1-3 라운드 전투 시작 직전에 선택합니다. 골드/프리즘 증강은 아직 없습니다.</p></div>`;}
 const css=document.createElement('style');css.textContent=`.silver-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(136px,1fr));gap:13px}.silver-choice{border:1px solid #b9c2e5;border-radius:12px;background:linear-gradient(160deg,#333951,#161c2a);color:#f2f2fa;padding:7px;display:flex;flex-direction:column;gap:6px;text-align:center;cursor:pointer;transition:transform .15s,border-color .15s}.silver-choice:disabled{opacity:.5;cursor:not-allowed;filter:grayscale(1)}.silver-choice:hover:not(:disabled){transform:translateY(-5px);border-color:#fff;box-shadow:0 4px 17px #c2caf044}.silver-choice img{width:100%;aspect-ratio:2/3;object-fit:contain;border-radius:7px}.silver-choice strong{font-size:12px}.silver-effect{font-size:10px;color:#d2d9ec;line-height:1.35}.silver-active{border:1px solid #ced6ee;background:#2b344f;border-radius:10px;padding:8px 12px;margin:8px 0}.silver-active img{width:43px;height:66px;object-fit:contain;vertical-align:middle;margin-right:9px}.silver-transform-action{border:1px solid #d5c4ff;border-radius:8px;background:#514078;padding:5px 11px;color:white;cursor:pointer}`;document.head.appendChild(css);
 root.ArcanaSilver={DATA,BY_ID:DATA_BY_ID,BOT,BOT_CARD,towerStats,rootColumn,has,applySelection,beforeIncome,onStage,initForVisual,visualManaSpend,onSummon,refresh,setAttacker,clearAttacker,afterDamage,afterHeal,onBattleEnd,context,transform,bondRefresh,visualStartOfRound,visualSkipTurn,getVisualPlayer,choiceMarkup,refreshRemaining,refreshModeActive,toggleRefreshMode,refreshSelectedHand};
 })(window);
