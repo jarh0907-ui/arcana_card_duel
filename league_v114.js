@@ -15,7 +15,7 @@ const AI_VIRTUAL_TURN_CAP=24; // numerical-only AI match: 24 turns * 7.5s = 180s
 const AUTO_RESULT_DELAY_MS=4500; // results remain visible; spectating pauses auto-advance.
 
 const originalNewGame=newGame,originalShowResult=showResult,originalSummon=summon,originalDragon=summonDeathDragon;
-let league=null,previousDeckConfig=null,activePlayerMatch=null,replayTimer=null,replay=null,leagueKey='arcana_league_v120';
+let league=null,previousDeckConfig=null,activePlayerMatch=null,replayTimer=null,replay=null,leagueKey='arcana_league_v126';
 let sidebarCollapsed=false,matchClock=null,matchTimer=null,autoTimer=null;
 function clearAuto(){if(autoTimer!==null)clearTimeout(autoTimer);autoTimer=null;}
 function clearClock(){if(matchTimer!==null)clearInterval(matchTimer);matchTimer=null;matchClock=null;}
@@ -70,6 +70,7 @@ function scheduleAuto(delay=AUTO_RESULT_DELAY_MS){
 }
 function autoStartRound(){
  if(!league||league.finished||league.autoAdvance===false||replay||activePlayerMatch||league.phase!=='ready')return;
+ if(offerSilverAtRoundThree())return;
  if(roundType()==='shop')startShop();else startCombatRound();
 }
 function setAutoAdvance(value){
@@ -136,16 +137,23 @@ function totalDeck(p){return Object.values(p.deck).reduce((a,b)=>a+b,0);}
 function alive(){return league.players.filter(p=>p.hp>0);}
 function leagueSave(){if(!league)return;try{const snap=json(league);for(const h of snap.history||[])for(const m of h.matches||[])delete m.trace;localStorage.setItem(leagueKey,JSON.stringify(snap));}catch(e){} }
 function setPanel(visible){$L('leagueScreen').classList.toggle('hidden',!visible);$L('leagueScreen').setAttribute('aria-hidden',String(!visible));renderSidebar();}
-function leagueStart(){stopReplay();if(activePlayerMatch)return;previousDeckConfig=json(activeDeckConfig);league={stage:1,round:1,phase:'augment',autoAdvance:true,players:names.map((name,id)=>({id,name,style:styles[id],hp:START_HP,gold:START_GOLD,streak:0,wins:0,losses:0,byes:0,deck:id===0?playerDeck():sampleDeck(id),upgrades:{},buffs:{atk:0,hp:0},opponents:[],out:null,augments:[],silver:{},maxGlobalHp:100})),history:[],currentMatches:[],shopOffers:[],lastIncome:[],message:'실버 증강 선택',finished:false,order:0};for(const p of league.players.slice(1)){
- const suited={1:['glass','twins','imperfect','tears','root'],2:['buckle','root','tower','healing_orb','giant'],3:['tears','meet','luck','extra_hand','short_invest'],4:['root','healing_orb','imperfect','extra_hand','buckle'],5:['tower','smash','tears','buckle','short_invest'],6:['glass','twins','imperfect','root','extra_hand'],7:['fast_streak','giant','luck','late','short_invest']};
+function leagueStart(){stopReplay();if(activePlayerMatch)return;previousDeckConfig=json(activeDeckConfig);league={stage:1,round:1,phase:'ready',autoAdvance:true,players:names.map((name,id)=>({id,name,style:styles[id],hp:START_HP,gold:START_GOLD,streak:0,wins:0,losses:0,byes:0,deck:id===0?playerDeck():sampleDeck(id),upgrades:{},buffs:{atk:0,hp:0},opponents:[],out:null,augments:[],silver:{},maxGlobalHp:100})),history:[],currentMatches:[],shopOffers:[],lastIncome:[],message:'1-1 전투 시작 · 실버 증강은 1-3 시작 전 선택합니다.',finished:false,order:0};setPanel(true);leagueSave();renderLeague();scheduleAuto(150);}
+function offerSilverAtRoundThree(){
+ if(!league||league.stage!==1||league.round!==3||league.players[0].augments?.length)return false;
+ clearAuto();
+ for(const p of league.players.slice(1)){
+ const suited={1:['glass','twins','imperfect','tears','root'],2:['buckle','root','tower','healing_orb','giant'],3:['tears','meet','luck','extra_hand','short_invest','mysterious_die'],4:['root','healing_orb','imperfect','extra_hand','buckle'],5:['tower','smash','tears','buckle','short_invest'],6:['glass','twins','imperfect','root','extra_hand'],7:['fast_streak','giant','luck','late','short_invest','mysterious_die']};
  const pool=suited[p.id]||window.ArcanaSilver.DATA.map(x=>x.id);
  window.ArcanaSilver.applySelection(p,pool[Math.floor(Math.random()*pool.length)]);
- }setPanel(true);leagueSave();renderLeague();}
+ }
+ league.phase='augment';league.message='⬜ 1-3 실버 증강 선택 · 선택 후 전투 시작';
+ leagueSave();renderLeague();return true;
+}
 function leaveLeague(){if(activePlayerMatch)return;if(window.ArcanaSilver)window.ArcanaSilver.onBattleEnd();window.__silverPendingMapping=null;stopReplay();clearAuto();clearClock();if(!confirm('8인 리그를 종료하고 1대1 모드로 돌아갈까요? 진행 기록은 저장됩니다.'))return;league=null;if(previousDeckConfig){activeDeckConfig=json(previousDeckConfig);devDraft=json(previousDeckConfig);}setPanel(false);$L('leagueGameBar').hidden=true;originalNewGame();renderDevPanel();}
 function resumeLeague(){try{const value=localStorage.getItem(leagueKey);if(!value)return false;const loaded=JSON.parse(value);if(!Array.isArray(loaded.players)||loaded.players.length!==8)return false;previousDeckConfig=json(activeDeckConfig);league=loaded;league.autoAdvance=league.autoAdvance!==false;league.currentMatches=[];if(league.phase==='battle')league.phase='ready';setPanel(true);renderLeague();scheduleAuto(200);return true;}catch{return false;}}
 function newLeagueMenu(){if(activePlayerMatch)return;if(league){setPanel(true);renderLeague();return;}setPanel(true);$L('leagueBody').innerHTML=`<div class="lg-card lg-intro"><h2>🏆 8인 생존 리그</h2><p>플레이어 1명과 전략이 다른 AI 7명이 참가합니다. 매 스테이지 7라운드: ⚔ ⚔ ⚔ 🛒 ⚔ ⚔ 🛒</p><p>글로벌 HP 100 · 패배 피해 = 스테이지×3 + 승자의 남은 전투 HP÷2(버림). 골드로 덱을 강화하며 최후의 한 명이 우승합니다.</p><p class="lg-muted">실버 증강 31종을 테스트할 수 있습니다. 골드/프리즘은 아직 없습니다. 상점 가격과 강화 효과는 임시값입니다.</p><div class="lg-actions"><button class="lg-primary" data-lg="start">새 리그 시작</button><button data-lg="resume">저장된 리그 이어하기</button><button data-lg="close">1대1로 돌아가기</button></div></div>`;}
 function roundType(){return league.round===4||league.round===7?'shop':'combat';}
-function stagedNext(){clearAuto();if(league.round===7){league.stage++;league.round=1;}else league.round++;league.phase='ready';league.currentMatches=[];league.lastIncome=[];league.shopOffers=[];for(const p of alive())window.ArcanaSilver.onStage(p,league.stage,league.round);leagueSave();renderLeague();scheduleAuto(170);}
+function stagedNext(){clearAuto();if(league.round===7){league.stage++;league.round=1;}else league.round++;league.phase='ready';league.currentMatches=[];league.lastIncome=[];league.shopOffers=[];for(const p of alive())window.ArcanaSilver.onStage(p,league.stage,league.round);if(offerSilverAtRoundThree())return;leagueSave();renderLeague();scheduleAuto(170);}
 function giveIncome(p,combat,result){if(p.hp<=0)return null;const before=p.gold,interest=window.ArcanaSilver.beforeIncome(p,Math.min(5,Math.floor(before/10)));let bonus=0,win=0;
  if(combat){if(result==='win'){p.wins++;p.streak=p.streak>0?p.streak+(window.ArcanaSilver.has(p,'fast_streak')?2:1):(window.ArcanaSilver.has(p,'fast_streak')?2:1);win=1;bonus=p.streak>=6?3:p.streak>=4?2:p.streak>=2?1:0;}
  else if(result==='loss'){p.losses++;p.streak=p.streak<0?p.streak-(window.ArcanaSilver.has(p,'fast_streak')?2:1):-(window.ArcanaSilver.has(p,'fast_streak')?2:1);const n=-p.streak;bonus=n>=5?3:n>=3?2:n>=2?1:0;}
@@ -221,7 +229,7 @@ function finishRound(){if(!league||league.phase!=='battle')return;if(league.curr
   const before=p.gold,interest=window.ArcanaSilver.beforeIncome(p,Math.min(5,Math.floor(before/10)));p.losses++;p.streak=p.streak<0?p.streak-(window.ArcanaSilver.has(p,'fast_streak')?2:1):-(window.ArcanaSilver.has(p,'fast_streak')?2:1);const n=-p.streak,streak=n>=5?3:n>=3?2:n>=2?1:0;p.gold+=5+interest+streak;league.lastIncome.push({id,before,base:5,interest,win:0,streak,total:5+interest+streak,after:p.gold});}}
  league.history.push({stage:league.stage,round:league.round,type:'combat',matches:league.currentMatches.map(m=>({...m})),income:league.lastIncome.map(x=>({...x}))});for(const old of league.history.slice(0,-8))for(const m of old.matches||[])delete m.trace;
  league.phase=alive().length<=1?'finished':'result';league.finished=league.phase==='finished';league.message=league.finished?'🏆 마지막 생존자가 결정됐습니다!':'라운드 종료. AI 경기를 관전하거나 다음 라운드로 진행하세요.';leagueSave();renderLeague();scheduleAuto();}
-function nextRound(){if(league.phase==='result'||league.phase==='shop-done')stagedNext();else if(league.phase==='ready'){if(roundType()==='shop')startShop();else startCombatRound();}}
+function nextRound(){if(league.phase==='result'||league.phase==='shop-done')stagedNext();else if(league.phase==='ready'){if(offerSilverAtRoundThree())return;if(roundType()==='shop')startShop();else startCombatRound();}}
 function startShop(){league.phase='shop';league.lastIncome=alive().map(p=>giveIncome(p,false,null));league.shopOffers=Object.keys(CARD_DB).filter(id=>CARD_DB[id].type!=='unit'||!CARD_DB[id].token).filter(id=>!CARD_DB[id].dragon&&!CARD_DB[id].token).sort(()=>Math.random()-.5).slice(0,8);
  for(const p of alive())if(p.id!==0)aiShopping(p);
  league.message='상점 라운드입니다. 구매·제거·강화·버프 획득 가능. 가격/효과는 임시값입니다.';leagueSave();renderLeague();if(league.players[0].hp<=0)endShop();}
@@ -264,7 +272,7 @@ function renderLeague(){if(!league)return;setPanel(true);renderSidebar();$L('lea
  const archive=league.history.slice(-7).reverse().filter(h=>h.matches?.some(m=>m.trace?.length));
  const replayArchive=archive.length?`<div class="lg-card"><h3>👁 지난 AI 경기 관전</h3>${archive.map(h=>`<div class="lg-match"><strong>${h.stage}-${h.round}</strong>${h.matches.filter(m=>m.trace?.length).map(m=>`<button data-lg="watch" data-id="${safe(m.id)}">${safe(league.players[m.a].name)} vs ${safe(league.players[m.b].name)}</button>`).join('')}</div>`).join('')}</div>`:'';
  const combatHtml=(league.phase==='battle'||league.phase==='result'||league.phase==='finished')?`<div class="lg-card"><h3>⚔ 대진과 관전</h3>${matches||'<p>전투 기록이 없습니다.</p>'}<p class="lg-muted">AI 경기는 화면 렌더링 없이 계산하고, 선택한 경기만 기록으로 관전할 수 있어요.</p></div>`:'';
- $L('leagueBody').innerHTML=`<div class="lg-card"><div class="lg-actions lg-progress">${Array.from({length:7},(_,i)=>`<span class="lg-dot ${i+1===league.round?'lg-now':''}">${i+1}R ${[4,7].includes(i+1)?'🛒':'⚔'}</span>`).join('')}</div><p>${safe(league.message||'')}</p><div class="lg-actions">${actions}<button data-lg="return">1대1 모드로</button></div></div><div class="lg-card"><h3>🏆 순위 및 글로벌 HP</h3><p>왼쪽 체력 바에서 8명 전원의 글로벌 HP를 확인하고, 선수를 클릭해 AI 경기를 관전하세요.</p></div>${combatHtml}${replayArchive}${shopHtml}${league.lastIncome.length?`<div class="lg-card"><h3>💰 이번 라운드 골드 정산</h3>${league.lastIncome.map(x=>`<p>${safe(league.players[x.id].name)}: ${x.before} + 기본5 + 이자${x.interest} + 승리${x.win} + 연승·연패${x.streak} = <b>${x.after}G</b></p>`).join('')}</div>`:''}<div class="lg-card"><h3>📖 확정 규칙</h3><p>스테이지당 ⚔ ⚔ ⚔ 🛒 ⚔ ⚔ 🛒 · 기본 골드 매 라운드 +5 · 10G당 이자 +1 (최대 +5) · 승리 +1 · 연승 2/4/6회 +1/+2/+3 · 연패 2/3/5회 +1/+2/+3</p><p>동일 라운드 탈락은 음수 글로벌 HP가 낮을수록 아래, 같으면 기록상의 전투 종료 시점이 빠른 참가자가 아래. 이후 라운드 탈락자는 무조건 더 높은 순위입니다.</p><p class="lg-muted">상점 수치 임시 · 실버 증강 20종 테스트 중 · 경기 간 덱·골드·글로벌 HP 유지, 개별 전투는 초기화.</p></div>`;
+ $L('leagueBody').innerHTML=`<div class="lg-card"><div class="lg-actions lg-progress">${Array.from({length:7},(_,i)=>`<span class="lg-dot ${i+1===league.round?'lg-now':''}">${i+1}R ${[4,7].includes(i+1)?'🛒':'⚔'}</span>`).join('')}</div><p>${safe(league.message||'')}</p><div class="lg-actions">${actions}<button data-lg="return">1대1 모드로</button></div></div><div class="lg-card"><h3>🏆 순위 및 글로벌 HP</h3><p>왼쪽 체력 바에서 8명 전원의 글로벌 HP를 확인하고, 선수를 클릭해 AI 경기를 관전하세요.</p></div>${combatHtml}${replayArchive}${shopHtml}${league.lastIncome.length?`<div class="lg-card"><h3>💰 이번 라운드 골드 정산</h3>${league.lastIncome.map(x=>`<p>${safe(league.players[x.id].name)}: ${x.before} + 기본5 + 이자${x.interest} + 승리${x.win} + 연승·연패${x.streak} = <b>${x.after}G</b></p>`).join('')}</div>`:''}<div class="lg-card"><h3>📖 확정 규칙</h3><p>스테이지당 ⚔ ⚔ ⚔ 🛒 ⚔ ⚔ 🛒 · 기본 골드 매 라운드 +5 · 10G당 이자 +1 (최대 +5) · 승리 +1 · 연승 2/4/6회 +1/+2/+3 · 연패 2/3/5회 +1/+2/+3</p><p>동일 라운드 탈락은 음수 글로벌 HP가 낮을수록 아래, 같으면 기록상의 전투 종료 시점이 빠른 참가자가 아래. 이후 라운드 탈락자는 무조건 더 높은 순위입니다.</p><p class="lg-muted">상점 수치 임시 · 실버 증강 31종 테스트 중 (선택 시점 1-3) · 경기 간 덱·골드·글로벌 HP 유지, 개별 전투는 초기화.</p></div>`;
 }
 function renderShop(){const p=league.players[0],cards=Object.entries(p.deck).filter(([id,n])=>n>0&&CARD_DB[id]).sort((a,b)=>a[0].localeCompare(b[0]));
  const offers=league.shopOffers.map(id=>{const c=CARD_DB[id];return `<div class="lg-shop-card"><b>${safe(c.name)}</b><small>${c.type==='unit'?`⚔${c.atk} ♥${c.hp}`:c.type==='spell'?'스펠':'장비'} · 마나 ${c.cost}</small><button data-lg="shop" data-action="buy" data-id="${id}" ${p.gold<buyPrice(id)||totalDeck(p)>=MAX_DECK?'disabled':''}>구매 ${buyPrice(id)}G</button></div>`;}).join('');
@@ -283,7 +291,10 @@ document.addEventListener('click',e=>{
 $L('leagueSidebarToggle').addEventListener('click',()=>{sidebarCollapsed=!sidebarCollapsed;renderSidebar();});
 $L('leagueSidebarPlayers').addEventListener('click',e=>{const b=e.target.closest('button[data-side-player]');if(b)sidebarWatchPlayer(Number(b.dataset.sidePlayer));});
 $L('leagueOpen').addEventListener('click',newLeagueMenu);
-$L('leagueBody').addEventListener('click',e=>{const silver=e.target.closest('button[data-silver-pick]');if(silver&&league?.phase==='augment'){const p=league.players[0];if(window.ArcanaSilver.applySelection(p,silver.dataset.silverPick)){league.phase='ready';league.message='⬜ '+window.ArcanaSilver.BY_ID[silver.dataset.silverPick].name+' 선택 완료';leagueSave();renderLeague();scheduleAuto(200);}return;}const b=e.target.closest('button[data-lg]');if(!b)return;const act=b.dataset.lg;
+$L('leagueBody').addEventListener('click',e=>{const silver=e.target.closest('button[data-silver-pick]');if(silver&&league?.phase==='augment'){const p=league.players[0];if(window.ArcanaSilver.applySelection(p,silver.dataset.silverPick)){
+ const die=p.silver?.diceRoll;league.phase='ready';
+ league.message='⬜ '+window.ArcanaSilver.BY_ID[silver.dataset.silverPick].name+' 선택 완료'+(die?` · 🎲 ${die} → ${p.silver.diceGold}골드 획득`:'');
+ leagueSave();renderLeague();scheduleAuto(die?3000:200);}return;}const b=e.target.closest('button[data-lg]');if(!b)return;const act=b.dataset.lg;
  if(act==='start'||act==='restart'){leagueStart();return;}if(act==='resume'){if(!resumeLeague())alert('저장된 리그가 없습니다. 새로 시작해주세요.');return;}
  if(act==='close'){setPanel(false);return;}if(act==='return'){leaveLeague();return;}
  if(act==='next'){clearAuto();nextRound();return;}if(act==='fight'){playMyMatch();return;}if(act==='auto-toggle'){setAutoAdvance(league.autoAdvance===false);return;}if(act==='shop-done'){endShop();return;}
