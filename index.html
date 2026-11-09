@@ -4,7 +4,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1" name="viewport"/>
-<title>아르카나 카드 듀얼 WEB v1.2.5 — 1대1 · 8인 리그</title>
+<title>아르카나 카드 듀얼 WEB v1.2.6 — 1대1 · 8인 리그</title>
 <style>
 :root{color-scheme:dark;--bg:#0a1021;--panel:#101b32;--panel2:#19263f;--line:#3c4c68;--text:#eff4ff;--muted:#9caec9;--gold:#f2c67d;--blue:#72bafa;--red:#f5838b;--mint:#80dbbb;--card:#243450}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 60% -30%,#293d67 0%,#0a1021 55%),var(--bg);font-family:system-ui,-apple-system,'Noto Sans KR',sans-serif;color:var(--text);min-height:100vh}button{font:inherit;cursor:pointer;color:inherit}button:disabled{cursor:not-allowed;opacity:.48}button:focus-visible{outline:3px solid #f2ca89;outline-offset:3px} .app{max-width:1340px;margin:auto;padding:24px 20px 28px}
@@ -482,7 +482,7 @@ body.league-sidebar-collapsed .league-sidepanel .lg-side-footer{display:none}
 <body>
 <div class="app">
 <header>
-<div><div class="kicker">WEB v1.2.5 · 실버 증강 20종 · 8인 리그</div><h1><span>아르카나</span> 카드 듀얼</h1></div>
+<div><div class="kicker">WEB v1.2.6 · 실버 증강 31종 · 8인 리그</div><h1><span>아르카나</span> 카드 듀얼</h1></div>
 <div class="head-actions"><button class="secondary-btn" id="leagueOpen" title="8인 경쟁 모드 · 골드 및 상점">🏆 8인 리그</button><button aria-pressed="false" class="secondary-btn" id="soundToggle" title="전투 효과음 음소거">🔇 음소거</button><button aria-pressed="false" class="secondary-btn" id="speedToggle" title="전투 연출 배속">⏩ 1배속</button><button class="secondary-btn" id="rulesButton">❔ 규칙 보기</button><button class="secondary-btn" id="restartButton">↻ 새 게임</button></div>
 </header>
 <div id="leagueGameBar" class="lg-ingame-bar" hidden></div>
@@ -1962,7 +1962,7 @@ function render(){if(!game)return;if(window.ArcanaSilver){window.ArcanaSilver.re
 function showOverlay(html){$('modalContent').innerHTML=html;$('overlay').classList.remove('hidden')}
 function hideOverlay(){$('overlay').classList.add('hidden')}
 function showResult(){let win=game.winner==='player',draw=game.winner==='draw';showOverlay(`<div style="font-size:51px">${draw?'🤝':win?'🏆':'💔'}</div><h2>${draw?'무승부':win?'승리!':'패배!'}</h2><p>${draw?'양쪽 본체가 동시에 쓰러졌습니다.':win?'상대 마도사를 쓰러뜨렸습니다!':'내 마도사의 체력이 0이 되었습니다.'}<br>${game.turn}턴까지 진행했습니다.</p><div class="btn-row"><button class="primary-btn" onclick="newGame()">다시 플레이</button></div>`)}
-function showRules(){showOverlay(`<div class="rules"><h2>📘 게임 규칙 · v1.2.5</h2>
+function showRules(){showOverlay(`<div class="rules"><h2>📘 게임 규칙 · v1.2.6</h2>
  <p><b>8인 리그:</b> 경기 시작과 다음 전투 라운드가 자동 연결됩니다. 전투별 제한 시간은 3분이며 본체 체력 → 필드 전력 → 남은 카드 수 순서로 판정하고, 완전 동률일 때 고정 시드로 결정합니다. 상점은 구매 완료까지 자동으로 넘어가지 않습니다. AI끼리의 대전은 3분에 해당하는 24턴의 경량 수치 시뮬레이션을 사용합니다.</p>
  <p><b>턴:</b> 시작 손패는 각자 <b>4장</b>이며, 두 번째 자기 턴부터 매 턴 <b>2장씩 드로우</b>합니다(손패 최대 9장). A → B 순으로 진행. 각 플레이어는 ① 소환 ② 공격·능력 대상 예약 ③ 마법 사용 ④ 예약 공격 실행의 4단계를 거칩니다. 플레이어는 아래 진행 버튼으로 다음 단계로 넘어갑니다.</p>
  <p><b>라인 전투·재배치:</b> 일반 공격은 공격자가 서 있는 번호의 세로 라인에서만 할 수 있습니다. 근접은 해당 라인 전열 우선, 원거리 후열은 같은 라인 상대 전열만 공격합니다. ② 공격 지정 단계에서 공격자는 아군 2장의 자리를 1회 맞바꿀 수 있습니다. ③ 마법 이후 수비자는 공격 예약을 보고 자기 유닛 2장의 위치를 1회 맞바꿀 수 있습니다. 빈칸 이동은 불가, 전·후열 배치 제한과 오두막 작업 제한은 유지됩니다. 일반 공격은 <b>칸 지정</b>이므로 교환 후 그 칸에 선 유닛이 맞습니다. 광역 효과는 고유 범위로 적용됩니다. 라인이 완전히 비어 있으면 전열에서 본체를 공격할 수 있습니다.</p>
