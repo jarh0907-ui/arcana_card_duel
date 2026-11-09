@@ -142,7 +142,7 @@ function offerSilverAtRoundThree(){
  if(!league||league.stage!==1||league.round!==3||league.players[0].augments?.length)return false;
  clearAuto();
  for(const p of league.players.slice(1)){
- const suited={1:['glass','twins','imperfect','tears','root'],2:['buckle','root','tower','healing_orb','giant'],3:['tears','meet','luck','extra_hand','short_invest','mysterious_die'],4:['root','healing_orb','imperfect','extra_hand','buckle'],5:['tower','smash','tears','buckle','short_invest'],6:['glass','twins','imperfect','root','extra_hand'],7:['fast_streak','giant','luck','late','short_invest','mysterious_die']};
+ const suited={1:['glass','twins','imperfect','tears','root','make_way','electric_shock_1','united_will'],2:['buckle','root','tower','healing_orb','giant','boxing_lessons','predict_result'],3:['tears','meet','luck','extra_hand','short_invest','mysterious_die','spare_bow','refresh_day','use_every_slot'],4:['root','healing_orb','imperfect','extra_hand','buckle','boxing_lessons','united_will','kingslayer'],5:['tower','smash','tears','buckle','short_invest','electric_shock_1','make_way','use_every_slot'],6:['glass','twins','imperfect','root','extra_hand','spare_bow','refresh_day','boxing_lessons'],7:['fast_streak','giant','luck','late','short_invest','mysterious_die','kingslayer','predict_result','use_every_slot']};
  const pool=suited[p.id]||window.ArcanaSilver.DATA.map(x=>x.id);
  window.ArcanaSilver.applySelection(p,pool[Math.floor(Math.random()*pool.length)]);
  }
