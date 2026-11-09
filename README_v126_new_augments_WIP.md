@@ -28,7 +28,7 @@ Main game remains v1.2.5 while the new patch is developed.
 
 ## Clarifications needed
 - 탐사: confirm the 33-mana large reward (currently pending), and whether 'round' means each individual combat turn (current assumption) or once per league match.
-- 약간 신비한 주사위: what die outcomes and prizes are used?
+- 약간 신비한 주사위: confirmed and implemented in v1.2.6, payouts [2,4,7,10,13,17] gold for rolls 1 through 6.
 - 새로 고침의 날: confirm the 3 uses apply to the whole 8-player league (current assumption) rather than resetting for every fight.
 - 권투 교습: implemented as dynamically recalculated bonus for front-row units.
 - Confirm if game-end empty-slot gold is calculated at the end of each league battle, and whether new weapon draws search the current deck.
@@ -36,3 +36,12 @@ Main game remains v1.2.5 while the new patch is developed.
 ## Validation
 - 31 entries registered. User-selected hand replacement test, front-row-only boxing HP, exploration rear-slot loss & mana accumulation passed.
 - 40 AI numeric duel tests passed; browser loading was blocked by the current test environment. NOT released to main.
+
+## v1.2.6 additional rules and verified implementation
+- All eight participants begin rounds **1-1** and **1-2** without augments.
+- **Before round 1-3 combat**, seven AI participants receive their augments; player must select one of 31 before the 1-3 fight begins.
+- **약간 신비한 주사위** is enabled: uniformly roll 1–6 one time when selected; grant 2, 4, 7, 10, 13, 17 gold respectively. Store last roll and payout in the player's silver state; no repeated rewards.
+- Both full-resolution WebP and loading-thumbnail WebP artwork of the 11 newly supplied augments are committed to this branch.
+- Save key upgraded to `arcana_league_v126` to preserve legacy game save storage.
+- Tests: JS parse checks, real Chromium inline-document UI tests for start / 1-1 / 1-2 / 1-3 / dice / boxing selection; first league battle boot test; one 12-round numeric AI duel for each of 31 augment types, without script errors.
+- Exploration's 33-mana reward remains deliberately undefined per user instruction. Code only records progress and marks reward pending.
